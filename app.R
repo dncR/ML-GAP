@@ -115,20 +115,6 @@
         ## Analysis ----
         conditionalPanel(
           condition = "input.tabs1 == 'Analysis'",
-          # checkboxGroupInput(inputId = "dimensionReductionMethod", 
-          #                    label = "Dimension Reduction on Raw Data:", 
-          #                    choiceNames = list("PCA", "t-SNE"),
-          #                    choiceValues = list("pca", "tsne"),
-          #                    inline = TRUE, selected = "pca"),
-          
-          # checkboxGroupInput(
-          #   inputId = "augmentationMethod", 
-          #   label = "Augmentation Method:", 
-          #   choiceNames = list("MixUp", "GANs", "MixUp and GANs"),
-          #   choiceValues = list("mixup", "gans", "mixupgans"),
-          #   selected = "mixup"
-          # ),
-          
           checkboxGroupInput(
             inputId = "featureSelectionMethod",
             label = "Feature Selection (DE Genes):", 
@@ -157,17 +143,23 @@
               )
             )
           ),
-          tags$hr(style = "color: red"),
+          hr(style = "border-color: #bebebe"),
+          
           fluidRow(
             column(
               width = 12,
               div(
-                actionButton("resetAnalysisInputs", "Reset"),
-                actionButton("runAnalysis", "Run", class = "btn-success"),
-                style = "float: right;"
+                style = "float: right; margin: 0px 10px 0px 0px!important;",
+                span(
+                  icon("question-sign", lib = "glyphicon", style="margin-right: 0px;"), 
+                  tags$a(href = "about:blank", "Manual", target = "_blank")
+                ),
+                actionButton("resetAnalysisInputs", "Reset", style = "margin-left: 10px;"),
+                actionButton("runAnalysis", "Run", class = "btn-success")
               )
             )
           ),
+          
           div(
             uiOutput(outputId = "alertBoxForRunButton", inline = FALSE)
           )
@@ -178,7 +170,7 @@
       mainPanel(
         width = 9,
         tabsetPanel(
-          id = "tabs1",
+          id = "tabs1", type = "pills",
           
           ## Data Upload ----
           tabPanel(
