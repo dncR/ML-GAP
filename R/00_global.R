@@ -16,25 +16,29 @@ analysisOptionsModalDefaults <- list(
       scale = TRUE 
     ),
     tSNE = list(
-      initDimsPCA = 50,
-      perplexity = 30,
-      nIter = 500
+      nStepsPCA_tSNE = 50,
+      preplexity_tSNE = 30,
+      nIter_tSNE = 500
     )
   ),
   Augmentation = list(
     MixUp = list(
-      method = "unbiased",
-      alpha = 0.5,
-      m = 2,
-      threshold = 0.5
+      method_MixUp = "unbiased",
+      alpha_MixUp = 0.5,
+      m_MixUp = 2,
+      y_threshold_MixUp = 0.5
     )
   ),
   FeatureSelection = list(
     DESeq = list(
-      minCount = 3
+      minCount = 3,
+      testType_DESeq = "wald",
+      fitType_DESeq = "parametric",
+      sfType_DESeq = "ratio",
+      pAdjust_DESeq = "BH"
     ),
     PCA = list(
-      nFeatures = NA
+      nFeat_PCA = 100
     )
   )
 )

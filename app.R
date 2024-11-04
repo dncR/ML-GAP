@@ -639,7 +639,6 @@ server <- function(input, output, session) {
         choices = list(
           "Dimension Reduction" = "dimReduction",
           "Augmentation" = "augmentation",
-          "Statistical Check" = "statCheck",
           "Feature Selection" = "featureSelect"
         )
       ),
@@ -649,6 +648,19 @@ server <- function(input, output, session) {
         div(
           class = "bordered-div",
           fluidRow(
+            column(
+              width = 6,
+              blockTitle("Parameters (t-SNE)"),
+              div(
+                style = "margin-top: 10px!important; ",
+                div(
+                  style = "margin-left: 10px!important;",
+                  numericInput(inputId = "nStepsPCA_tSNE", label = "Initial dimensions (PCA)", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nStepsPCA_tSNE, min = 1),
+                  numericInput(inputId = "preplexity_tSNE", label = "Perplexity", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE, min = 1),
+                  numericInput(inputId = "nIter_tSNE", label = "Number of iterations", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nIter_tSNE, min = 1)
+                )
+              )
+            ),
             column(
               width = 6,
               blockTitle("Preprocess raw data (PCA)"),
@@ -661,19 +673,6 @@ server <- function(input, output, session) {
                   choiceValues = list("centerPCA", "scalePCA"), 
                   selected = c("centerPCA", "scalePCA")[c(current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center, current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale)], 
                   inline = FALSE
-                )
-              )
-            ),
-            column(
-              width = 6,
-              blockTitle("Parameters (t-SNE)"),
-              div(
-                style = "margin-top: 10px!important; ",
-                div(
-                  style = "margin-left: 10px!important;",
-                  numericInput(inputId = "nStepsPCA_tSNE", label = "Initial dimensions (PCA)", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initDimsPCA, min = 1),
-                  numericInput(inputId = "preplexity_tSNE", label = "Perplexity", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$perplexity, min = 1),
-                  numericInput(inputId = "nIter_tSNE", label = "Number of iterations", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nIter, min = 1)
                 )
               )
             )
@@ -696,54 +695,43 @@ server <- function(input, output, session) {
                     inputId = "method_MixUp", 
                     label = NULL, 
                     choices = c("Unbiased" = "unbiased", "Minority" = "minority", "Inner" = "inner"), 
-                    width = "150px"
+                    selected = current_AnalysisOptionsModal$Augmentation$MixUp$method_MixUp
                   ),
                   label = "Method"
                 ),
                 labelLeft(
-                  div(
-                    style = "margin-left: 13px!important;",
-                    numericInput(
-                      inputId = "alpha_MixUp", 
-                      label = NULL, 
-                      value = 0.5, 
-                      step = 0.01,
-                      width = "80px"
-                    )
+                  numericInput(
+                    inputId = "alpha_MixUp", 
+                    label = NULL, 
+                    value = current_AnalysisOptionsModal$Augmentation$MixUp$alpha_MixUp, 
+                    step = 0.01
                   ),
                   label = "Alpha"
                 )
               )
             ),
-            # column(width = 2),
             column(
               width = 6,
               div(
                 style = "margin-left: 10px;",
                 labelLeft(
-                  div(
-                    numericInput(
-                      inputId = "m_MixUp", 
-                      label = NULL, 
-                      value = 2, 
-                      min = 2, 
-                      max = 50,
-                      width = "80px"
-                    )
+                  numericInput(
+                    inputId = "m_MixUp", 
+                    label = NULL, 
+                    value = current_AnalysisOptionsModal$Augmentation$MixUp$m_MixUp, 
+                    min = 2, 
+                    max = 50
                   ),
                   label = "Replication"
                 ),
                 labelLeft(
-                  div(
-                    numericInput(
-                      inputId = "y_threshold_MixUp", 
-                      label = NULL, 
-                      value = 0.5, 
-                      min = 0, 
-                      max = 1,
-                      step = 0.01,
-                      width = "80px"
-                    )
+                  numericInput(
+                    inputId = "y_threshold_MixUp", 
+                    label = NULL, 
+                    value = current_AnalysisOptionsModal$Augmentation$MixUp$y_threshold_MixUp, 
+                    min = 0, 
+                    max = 1,
+                    step = 0.01
                   ),
                   label = "Threshold"
                 )
@@ -760,18 +748,82 @@ server <- function(input, output, session) {
           fluidRow(
             column(
               width = 6,
-              blockTitle("PCA Options"),
+              blockTitle("Differential Expression (DESeq)"),
               div(
                 style = "margin-left: 10px;",
-                
+                labelLeft(
+                  selectInput(
+                    inputId = "testType_DESeq",
+                    label = NULL,
+                    choices = list(
+                      "Wald" = "wald",
+                      "Likelihood ratio" = "lrt"
+                    ),
+                    selected = current_AnalysisOptionsModal$FeatureSelection$DESeq$testType_DESeq
+                  ),
+                  label = "Hypothesis test"
+                ),
+                labelLeft(
+                  selectInput(
+                    inputId = "fitType_DESeq",
+                    label = NULL,
+                    choices = list(
+                      "Parametric" = "parametric",
+                      "Local" = "local",
+                      "Mean" = "mean",
+                      "Regression (GLM)"
+                    ),
+                    selected = current_AnalysisOptionsModal$FeatureSelection$DESeq$fitType_DESeq
+                  ),
+                  label = "Model fitting"
+                ),
+                labelLeft(
+                  selectInput(
+                    inputId = "sfType_DESeq",
+                    label = NULL,
+                    choices = list(
+                      "Ratio" = "ratio",
+                      "poscounts" = "poscounts",
+                      "Iterate" = "iterate"
+                    ),
+                    selected = current_AnalysisOptionsModal$FeatureSelection$DESeq$sfType_DESeq
+                  ),
+                  label = "Size factor estimate"
+                ),
+                labelLeft(
+                  selectInput(
+                    inputId = "pAdjust_DESeq",
+                    label = NULL,
+                    choices = list(
+                      "Benjamini-Hochberg" = "BH",
+                      "False Discovery Rate" = "fdr",
+                      "Hochberg" = "hochberg",
+                      "Bonferroni" = "bonferroni",
+                      "Benjamini-Yekutieli" = "BY",
+                      "Holm" = "holm",
+                      "Hommel" = "hommel",
+                      "No correction" = "none"
+                    ),
+                    selected = current_AnalysisOptionsModal$FeatureSelection$DESeq$pAdjust_DESeq
+                  ),
+                  label = "Adjust (p-val.)"
+                )
               )
             ),
             column(
               width = 6,
-              blockTitle("PCA Options"),
+              blockTitle("Prin. Comp. Analysis (PCA)"),
               div(
                 style = "margin-left: 10px;",
-                
+                labelLeft(
+                  numericInput(
+                    inputId = "nFeat_PCA",
+                    label = NULL,
+                    value = current_AnalysisOptionsModal$FeatureSelection$PCA$nFeat_PCA,
+                    min = 2
+                  ),
+                  label = "Num. of Features"
+                )
               )
             )
           )
@@ -817,18 +869,44 @@ server <- function(input, output, session) {
     preprocessPCA_values <- c("centerPCA", "scalePCA")[c(values$PCA_tSNE_plots$PCA$center, values$PCA_tSNE_plots$PCA$scale)]
     updateCheckboxGroupInput(inputId = "preprocessPCA", selected = preprocessPCA_values)
     
-    updateNumericInput(inputId = "nStepsPCA_tSNE", value = values$PCA_tSNE_plots$tSNE$initDimsPCA)
-    updateNumericInput(inputId = "preplexity_tSNE", value = values$PCA_tSNE_plots$tSNE$perplexity)
-    updateNumericInput(inputId = "nIter_tSNE", value = values$PCA_tSNE_plots$tSNE$nIter)
+    updateNumericInput(inputId = "nStepsPCA_tSNE", value = values$PCA_tSNE_plots$tSNE$nStepsPCA_tSNE)
+    updateNumericInput(inputId = "preplexity_tSNE", value = values$PCA_tSNE_plots$tSNE$preplexity_tSNE)
+    updateNumericInput(inputId = "nIter_tSNE", value = values$PCA_tSNE_plots$tSNE$nIter_tSNE)
+    
+    # Augmentation (augmentation)
+    updateSelectInput(inputId = "method_MixUp", selected = values$Augmentation$MixUp$method_MixUp)
+    updateNumericInput(inputId = "alpha_MixUp", value = values$Augmentation$MixUp$alpha_MixUp)
+    updateNumericInput(inputId = "m_MixUp", value = values$Augmentation$MixUp$m_MixUp)
+    updateNumericInput(inputId = "y_threshold_MixUp", value = values$Augmentation$MixUp$y_threshold_MixUp)
+    
+    # Feature Selection (featureSelect)
+    updateSelectInput(inputId = "testType_DESeq", selected = values$FeatureSelection$DESeq$testType_DESeq)
+    updateSelectInput(inputId = "fitType_DESeq", selected = values$FeatureSelection$DESeq$fitType_DESeq)
+    updateSelectInput(inputId = "sfType_DESeq", selected = values$FeatureSelection$DESeq$sfType_DESeq)
+    updateSelectInput(inputId = "pAdjust_DESeq", selected = values$FeatureSelection$DESeq$pAdjust_DESeq)
+    updateNumericInput(inputId = "nFeat_PCA", value = values$FeatureSelection$PCA$nFeat_PCA)
   }
   
   saveCurrentState_AnalysisOptionsModalElements <- function(){
     # Dimension Reduction (dimReduction)
     current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center <- "centerPCA" %in% input$preprocessPCA
     current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale <- "scalePCA" %in% input$preprocessPCA
-    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initDimsPCA <- input$nStepsPCA_tSNE
-    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$perplexity <- input$preplexity_tSNE
-    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nIter <- input$nIter_tSNE
+    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nStepsPCA_tSNE <- input$nStepsPCA_tSNE
+    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE <- input$preplexity_tSNE
+    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nIter_tSNE <- input$nIter_tSNE
+    
+    # Augmentation (augmentation)
+    current_AnalysisOptionsModal$Augmentation$MixUp$method_MixUp <- input$method_MixUp
+    current_AnalysisOptionsModal$Augmentation$MixUp$alpha_MixUp <- input$alpha_MixUp
+    current_AnalysisOptionsModal$Augmentation$MixUp$m_MixUp <- input$m_MixUp
+    current_AnalysisOptionsModal$Augmentation$MixUp$y_threshold_MixUp <- input$y_threshold_MixUp
+    
+    # Feature Selection (featureSelect)
+    current_AnalysisOptionsModal$FeatureSelection$DESeq$testType_DESeq <- input$testType_DESeq
+    current_AnalysisOptionsModal$FeatureSelection$DESeq$fitType_DESeq <- input$fitType_DESeq
+    current_AnalysisOptionsModal$FeatureSelection$DESeq$sfType_DESeq <- input$sfType_DESeq
+    current_AnalysisOptionsModal$FeatureSelection$DESeq$pAdjust_DESeq <- input$pAdjust_DESeq
+    current_AnalysisOptionsModal$FeatureSelection$PCA$nFeat_PCA <- input$nFeat_PCA
   }
   
   # Show modal when "Options" button is clicked.
@@ -867,14 +945,14 @@ server <- function(input, output, session) {
   observe({
     observe({
       if (input$alpha_MixUp < 0 | is.na(input$alpha_MixUp)){
-        updateNumericInput(inputId = "alpha_MixUp", value = analysisOptionsModalDefaults$Augmentation$MixUp$alpha)
+        updateNumericInput(inputId = "alpha_MixUp", value = analysisOptionsModalDefaults$Augmentation$MixUp$alpha_MixUp)
       }
     }) %>% 
       bindEvent(input$alpha_MixUp)
     
     observe({
       if (input$m_MixUp < 2 | is.na(input$m_MixUp)){
-        updateNumericInput(inputId = "m_MixUp", value = analysisOptionsModalDefaults$Augmentation$MixUp$m)
+        updateNumericInput(inputId = "m_MixUp", value = analysisOptionsModalDefaults$Augmentation$MixUp$m_MixUp)
       }
       
       if (!is.na(input$m_MixUp)){
@@ -887,7 +965,7 @@ server <- function(input, output, session) {
     
     observe({
       if (is.na(input$y_threshold_MixUp)){
-        val <- analysisOptionsModalDefaults$Augmentation$MixUp$threshold
+        val <- analysisOptionsModalDefaults$Augmentation$MixUp$y_threshold_MixUp
         updateNumericInput(inputId = "y_threshold_MixUp", value = val)
       } else {
         if (input$y_threshold_MixUp < 0){
@@ -1067,7 +1145,7 @@ server <- function(input, output, session) {
       PCAplot = ctrl_Analysis$PCAplotSucess,
       modalInput = input$preprocessPCA,
       modal2 = input$preplexity_tSNE,
-      modal2_rVal = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$perplexity,
+      modal2_rVal = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE,
       ctrlModalPCA = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center,
       ctrlModalPCA2 = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale,
       updated = ctrl_Analysis$update
