@@ -1,0 +1,59 @@
+.bordered-div {
+  border: 1px solid #aeaeae!important; 
+  padding: 10px 15px!important; 
+  margin: 0px!important
+}
+
+.centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.intro-page {
+  margin-left: 10%!important;
+  margin-right: 10%!important;
+}
+
+.add-right-margin {
+  padding-right: 40px!important;
+}
+
+.alert-box {
+  color:#555;
+  border-radius:10px;
+  padding:10px 10px 10px 15px;
+  margin: 10px 10px;
+}
+
+.alert-box span {
+  font-weight:bold;
+  text-transform:uppercase;
+}
+
+.error {
+  background:#ffecec;
+  border:1px solid #f5aca6;
+}
+
+.success {
+  background:#e9ffd9;
+  border:1px solid #a6ca8a;
+}
+
+.warning {
+  background:#fff8c4; /*url('images/notice.png') no-repeat 10px 50%*/
+  border:1px solid #f2c779;
+}
+
+.note {
+  background:#e3f7fc url('/www/icons/warning.png') no-repeat 10px 50%;
+  border:1px solid #8ed9f6;
+}
+
+.warning-box {
+  margin-bottom: 10px!important; 
+  margin-top: 10px!important;
+  background: #ffe7c4;
+  padding: 5px!important;
+}
