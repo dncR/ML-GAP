@@ -176,7 +176,7 @@ applyDESeq <- function(object, normalize = TRUE, transform = TRUE,
   return(list(
     DESeqObject = object_DESeq, 
     normalizedCounts = normalizedCounts,
-    transformedCounts = vstCounts
+    transformedCounts = transformedCounts
   ))
 }
 

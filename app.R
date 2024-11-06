@@ -170,7 +170,8 @@
       mainPanel(
         width = 9,
         tabsetPanel(
-          id = "tabs1", type = "pills",
+          id = "tabs1", 
+          type = "pills",
           
           ## Data Upload ----
           tabPanel(
