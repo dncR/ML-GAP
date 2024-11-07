@@ -495,7 +495,16 @@ server <- function(input, output, session) {
         div()
       }
     }) %>% 
-      bindEvent(ctrl_Analysis$update)}
+      bindEvent(ctrl_Analysis$update)
+    
+    # If response variable has changed, analysis should be re-run.
+    observe({
+      observe({
+        ctrl_Analysis$update <- TRUE
+      }) %>% 
+        bindEvent(input$responseVar, ignoreInit = TRUE)
+    }) %>% 
+      bindEvent(input$startAnalysis)}
   
   observe({
     DF <- getData()
@@ -1007,6 +1016,7 @@ server <- function(input, output, session) {
     
     res <- tSNEresults(
       .data = DF,
+      .response = input$responseVar,
       initial_dims = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE,
       perplexity = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE,
       max_iter = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE,
@@ -1132,12 +1142,12 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
-    # t-SNE sonu??lar??n?? data frame'e d??n????t??r??n
-    # colnames(tsne_data) <- c("Dim1", "Dim2")
-    # tsne_data$Species <- iris$Species[!duplicated(data_numeric)]  # Tekrarlanmayan g??zlemlerle t??rleri e??le??tirin
-    
-    tsneData <- as.data.frame(res$Y)
+    tsneData <- as.data.frame(res$results$Y)
     colnames(tsneData) <- c("Dim1", "Dim2")
+    
+    tsneData <- tsneData %>% 
+      mutate(Response = as.factor(res$response))
+    
     ctrl_Analysis$tSNEplotSucess <- TRUE
     
     return(tsneData)
@@ -1152,11 +1162,12 @@ server <- function(input, output, session) {
           panel.grid = element_blank()
         )
         
-        ggplot(plotData, aes(x = Dim1, y = Dim2)) +
+        ggplot(plotData, aes(x = Dim1, y = Dim2, color = Response)) +
           theme_bw(base_size = 14) +
           customTheme +
-          geom_point(size = 4, colour = rgb(1, 0, 0, .4)) +
-          labs(title = "t-SNE: Dimensionality Reduction", x = "Dimension 1", y = "Dimension 2")
+          geom_point(size = 4) +
+          labs(title = "t-SNE: Dimensionality Reduction", x = "Dimension 1", y = "Dimension 2") + 
+          guides(color = guide_legend(title = paste0("Response (", input$responseVar, ")"), position = "top"))
       })
     }
   }) %>% 

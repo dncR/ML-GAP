@@ -19,7 +19,7 @@ warningErrorModal <- function(text = "Text to show within model",
   )
 }
 
-tSNEresults <- function(.data = NULL, seed = NULL, ...){
+tSNEresults <- function(.data = NULL, .response = NULL, seed = NULL, ...){
   if (is.null(.data)){
     return(NULL)
   }
@@ -29,7 +29,15 @@ tSNEresults <- function(.data = NULL, seed = NULL, ...){
   }
   
   # Remove duplicates.
-  .data <- unique(.data)
+  .data <- .data[!duplicated(.data), ]
+  
+  .response_values <- NULL
+  if (!is.null(.response)){
+    .response_values <- .data[[.response]]
+    
+    .data <- .data %>% 
+      dplyr::select(-all_of(.response))
+  }
   
   tsneFit <- try({
     .data %>%
@@ -45,24 +53,15 @@ tSNEresults <- function(.data = NULL, seed = NULL, ...){
     return(NULL)
   }
   
+  return(
+    list(
+      results = tsneFit,
+      response = .response_values
+    )
+  )
+  
   return(tsneFit)
 }
-# # Show modal when file size exceeds allowed limits.
-# # Remove modal when close button is clicked.
-# observe({
-#   if (rVals$uploadFileLimit){
-#     showModal(warningErrorModal()) 
-#   }
-#   
-#   observe({
-#     removeModal()
-#     rVals$uploadFileLimit <- FALSE
-#   }) %>%
-#     bindEvent(input$closeErrorWarningModal, ignoreInit = TRUE)
-#   
-# }) %>% 
-#   bindEvent(rVals$uploadFileLimit, ignoreInit = TRUE)
-
 
 
 pcaResults <- function(.data = NULL, .response = NULL, ...){
@@ -70,11 +69,12 @@ pcaResults <- function(.data = NULL, .response = NULL, ...){
     return(NULL)
   }
   
+  .response_values <- NULL
   if (!is.null(.response)){
     .response_values <- .data[[.response]]
     
     .data <- .data %>% 
-      dplyr::select(-.response)
+      dplyr::select(-all_of(.response))
   }
   
   pcaFit <- try({
