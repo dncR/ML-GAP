@@ -114,7 +114,7 @@
           # Select response variable
           div(
             hr(style = "margin: 15px -10px; padding: 0px; border-color: #bebebe"),
-            varSelectInput(inputId = "responseVar", label = "Response Variable", data = NULL)
+            selectInput(inputId = "responseVar", label = "Response Variable", choices = NULL, selected = NULL)
           )
         ),
         
@@ -282,7 +282,7 @@ server <- function(input, output, session) {
   )
   
   cervicalCancerData <- reactive({
-    read.table("data/CervicalCO.txt", header = TRUE, sep = "\t", row.names = 1)
+    read.csv("data/CervicalCO.csv", header = TRUE)
   })
   
   # Upload/Load (example) data matrix
@@ -454,7 +454,16 @@ server <- function(input, output, session) {
       bindEvent(ctrl_DataUpload$colTo)}
   
   # Observers controlling the "Run" button under analysis tab, related warnings and update behaviors.
-  {# If clicked on "Run" button under analysis tab, button label reset to ""Run".
+  {# If response variable has changed, analysis should be re-run.
+    observe({
+      observe({
+        ctrl_Analysis$update <- TRUE
+      }) %>% 
+        bindEvent(input$responseVar, ignoreInit = TRUE)
+    }) %>% 
+      bindEvent(input$startAnalysis)
+    
+    # If clicked on "Run" button under analysis tab, button label reset to ""Run".
     observe({
       updateActionButton(inputId = "runAnalysis", label = "Run", disabled = TRUE)
       ctrl_Analysis$update <- FALSE
@@ -495,21 +504,13 @@ server <- function(input, output, session) {
         div()
       }
     }) %>% 
-      bindEvent(ctrl_Analysis$update)
-    
-    # If response variable has changed, analysis should be re-run.
-    observe({
-      observe({
-        ctrl_Analysis$update <- TRUE
-      }) %>% 
-        bindEvent(input$responseVar, ignoreInit = TRUE)
-    }) %>% 
-      bindEvent(input$startAnalysis)}
+      bindEvent(ctrl_Analysis$update)}
   
   observe({
     DF <- getData()
     if (!is.null(DF)){
-      updateVarSelectInput(inputId = "responseVar", data = DF)
+      responseVarChoices <- colnames(DF)[1:5]
+      updateSelectInput(inputId = "responseVar", choices = responseVarChoices, selected = responseVarChoices[1])
     }
   })
   
