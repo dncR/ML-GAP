@@ -648,9 +648,9 @@ server <- function(input, output, session) {
                 style = "margin-top: 10px!important; ",
                 div(
                   style = "margin-left: 10px!important;",
-                  numericInput(inputId = "nStepsPCA_tSNE", label = "Initial dimensions (PCA)", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nStepsPCA_tSNE, min = 1),
+                  numericInput(inputId = "initialDimsPCA_tSNE", label = "Initial dimensions (PCA)", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE, min = 1),
                   numericInput(inputId = "preplexity_tSNE", label = "Perplexity", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE, min = 1),
-                  numericInput(inputId = "nIter_tSNE", label = "Number of iterations", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nIter_tSNE, min = 1)
+                  numericInput(inputId = "maxIter_tSNE", label = "Number of iterations", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE, min = 1)
                 )
               )
             ),
@@ -862,9 +862,9 @@ server <- function(input, output, session) {
     preprocessPCA_values <- c("centerPCA", "scalePCA")[c(values$PCA_tSNE_plots$PCA$center, values$PCA_tSNE_plots$PCA$scale)]
     updateCheckboxGroupInput(inputId = "preprocessPCA", selected = preprocessPCA_values)
     
-    updateNumericInput(inputId = "nStepsPCA_tSNE", value = values$PCA_tSNE_plots$tSNE$nStepsPCA_tSNE)
+    updateNumericInput(inputId = "initialDimsPCA_tSNE", value = values$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE)
     updateNumericInput(inputId = "preplexity_tSNE", value = values$PCA_tSNE_plots$tSNE$preplexity_tSNE)
-    updateNumericInput(inputId = "nIter_tSNE", value = values$PCA_tSNE_plots$tSNE$nIter_tSNE)
+    updateNumericInput(inputId = "maxIter_tSNE", value = values$PCA_tSNE_plots$tSNE$maxIter_tSNE)
     
     # Augmentation (augmentation)
     updateSelectInput(inputId = "method_MixUp", selected = values$Augmentation$MixUp$method_MixUp)
@@ -880,13 +880,14 @@ server <- function(input, output, session) {
     updateNumericInput(inputId = "nFeat_PCA", value = values$FeatureSelection$PCA$nFeat_PCA)
   }
   
+  # Save current values from inputs of modal to the current state reactive list.
   saveCurrentState_AnalysisOptionsModalElements <- function(){
     # Dimension Reduction (dimReduction)
     current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center <- "centerPCA" %in% input$preprocessPCA
     current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale <- "scalePCA" %in% input$preprocessPCA
-    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nStepsPCA_tSNE <- input$nStepsPCA_tSNE
+    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE <- input$initialDimsPCA_tSNE
     current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE <- input$preplexity_tSNE
-    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nIter_tSNE <- input$nIter_tSNE
+    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE <- input$maxIter_tSNE
     
     # Augmentation (augmentation)
     current_AnalysisOptionsModal$Augmentation$MixUp$method_MixUp <- input$method_MixUp
@@ -978,14 +979,26 @@ server <- function(input, output, session) {
   # PCA & tSNE results
   pcaRes <- reactive({
     DF <- getData()
-    res <- pcaResults(DF)
+    res <- pcaResults(
+      .data = DF, 
+      center = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center, 
+      scale. = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale
+    )
     
     return(res)
   })
   
   tSNEres <- reactive({
     DF <- getData()
-    res <- tSNEresults(DF)
+    res <- tSNEresults(
+      .data = DF,
+      initial_dims = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE,
+      perplexity = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE,
+      max_iter = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE,
+      pca_center = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center,
+      pca_scale = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale,
+      check_duplicates = FALSE
+    )
     
     return(res)
   })

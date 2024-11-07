@@ -27,7 +27,11 @@ tSNEresults <- function(.data = NULL, ...){
   tsneFit <- try({
     .data %>%
       select(where(is.numeric)) %>%
-      Rtsne(dims = 2, perplexity = 10, verbose = FALSE, max_iter = 500)
+      Rtsne(
+        X = ., 
+        verbose = FALSE,
+        ...
+      )
   })
   
   if (inherits(tsneFit, "try-error")){
@@ -62,7 +66,7 @@ pcaResults <- function(.data = NULL, ...){
   pcaFit <- try({
     .data %>% 
       select(where(is.numeric)) %>% 
-      prcomp(scale. = TRUE, ...)
+      prcomp(x = ., ...)
   })
   
   if (inherits(pcaFit, "try-error")){

@@ -16,9 +16,9 @@ analysisOptionsModalDefaults <- list(
       scale = TRUE 
     ),
     tSNE = list(
-      nStepsPCA_tSNE = 50,
-      preplexity_tSNE = 30,
-      nIter_tSNE = 500
+      initialDimsPCA_tSNE = 50,
+      preplexity_tSNE = 10,
+      maxIter_tSNE = 500
     )
   ),
   Augmentation = list(
@@ -42,6 +42,3 @@ analysisOptionsModalDefaults <- list(
     )
   )
 )
-
-
-orig <- list(x = 5, y = TRUE)
