@@ -997,7 +997,8 @@ server <- function(input, output, session) {
       max_iter = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE,
       pca_center = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center,
       pca_scale = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale,
-      check_duplicates = FALSE
+      check_duplicates = FALSE,
+      seed = 212830
     )
     
     return(res)

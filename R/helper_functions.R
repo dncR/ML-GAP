@@ -19,9 +19,13 @@ warningErrorModal <- function(text = "Text to show within model",
   )
 }
 
-tSNEresults <- function(.data = NULL, ...){
+tSNEresults <- function(.data = NULL, seed = NULL, ...){
   if (is.null(.data)){
     return(NULL)
+  }
+  
+  if (!is.null(seed) && is.numeric(seed)){
+    set.seed(seed)
   }
   
   tsneFit <- try({
