@@ -109,6 +109,12 @@
             HTML('<br>'),
             HTML('<p>You can upload your data (<strong>.txt</strong> or <strong>.csv</strong>) separated by comma, tab, or semicolon.</p>'),
             HTML('<p><b>Note</b>: By default, first row must be the header including the variable names.</p>')
+          ),
+          
+          # Select response variable
+          div(
+            hr(style = "margin: 15px -10px; padding: 0px; border-color: #bebebe"),
+            varSelectInput(inputId = "responseVar", label = "Response Variable", data = NULL)
           )
         ),
         
@@ -489,8 +495,23 @@ server <- function(input, output, session) {
         div()
       }
     }) %>% 
-      bindEvent(ctrl_Analysis$update)}
+      bindEvent(ctrl_Analysis$update)
+    
+    # If response variable has changed, analysis should be re-run.
+    observe({
+      observe({
+        ctrl_Analysis$update <- TRUE
+      }) %>% 
+        bindEvent(input$responseVar, ignoreInit = TRUE)
+    }) %>% 
+      bindEvent(input$startAnalysis)}
   
+  observe({
+    DF <- getData()
+    if (!is.null(DF)){
+      updateVarSelectInput(inputId = "responseVar", data = DF)
+    }
+  })
   
   # Render UI to show Note text above data table which informs the researchers about the number of columns.
   output$colSelectorContainer <- renderUI({
@@ -648,9 +669,9 @@ server <- function(input, output, session) {
                 style = "margin-top: 10px!important; ",
                 div(
                   style = "margin-left: 10px!important;",
-                  numericInput(inputId = "nStepsPCA_tSNE", label = "Initial dimensions (PCA)", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nStepsPCA_tSNE, min = 1),
+                  numericInput(inputId = "initialDimsPCA_tSNE", label = "Initial dimensions (PCA)", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE, min = 1),
                   numericInput(inputId = "preplexity_tSNE", label = "Perplexity", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE, min = 1),
-                  numericInput(inputId = "nIter_tSNE", label = "Number of iterations", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nIter_tSNE, min = 1)
+                  numericInput(inputId = "maxIter_tSNE", label = "Number of iterations", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE, min = 1)
                 )
               )
             ),
@@ -862,9 +883,9 @@ server <- function(input, output, session) {
     preprocessPCA_values <- c("centerPCA", "scalePCA")[c(values$PCA_tSNE_plots$PCA$center, values$PCA_tSNE_plots$PCA$scale)]
     updateCheckboxGroupInput(inputId = "preprocessPCA", selected = preprocessPCA_values)
     
-    updateNumericInput(inputId = "nStepsPCA_tSNE", value = values$PCA_tSNE_plots$tSNE$nStepsPCA_tSNE)
+    updateNumericInput(inputId = "initialDimsPCA_tSNE", value = values$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE)
     updateNumericInput(inputId = "preplexity_tSNE", value = values$PCA_tSNE_plots$tSNE$preplexity_tSNE)
-    updateNumericInput(inputId = "nIter_tSNE", value = values$PCA_tSNE_plots$tSNE$nIter_tSNE)
+    updateNumericInput(inputId = "maxIter_tSNE", value = values$PCA_tSNE_plots$tSNE$maxIter_tSNE)
     
     # Augmentation (augmentation)
     updateSelectInput(inputId = "method_MixUp", selected = values$Augmentation$MixUp$method_MixUp)
@@ -880,13 +901,14 @@ server <- function(input, output, session) {
     updateNumericInput(inputId = "nFeat_PCA", value = values$FeatureSelection$PCA$nFeat_PCA)
   }
   
+  # Save current values from inputs of modal to the current state reactive list.
   saveCurrentState_AnalysisOptionsModalElements <- function(){
     # Dimension Reduction (dimReduction)
     current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center <- "centerPCA" %in% input$preprocessPCA
     current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale <- "scalePCA" %in% input$preprocessPCA
-    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nStepsPCA_tSNE <- input$nStepsPCA_tSNE
+    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE <- input$initialDimsPCA_tSNE
     current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE <- input$preplexity_tSNE
-    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$nIter_tSNE <- input$nIter_tSNE
+    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE <- input$maxIter_tSNE
     
     # Augmentation (augmentation)
     current_AnalysisOptionsModal$Augmentation$MixUp$method_MixUp <- input$method_MixUp
@@ -978,14 +1000,31 @@ server <- function(input, output, session) {
   # PCA & tSNE results
   pcaRes <- reactive({
     DF <- getData()
-    res <- pcaResults(DF)
+    
+    res <- pcaResults(
+      .data = DF, 
+      .response = input$responseVar,
+      center = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center, 
+      scale. = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale
+    )
     
     return(res)
   })
   
   tSNEres <- reactive({
     DF <- getData()
-    res <- tSNEresults(DF)
+    
+    res <- tSNEresults(
+      .data = DF,
+      .response = input$responseVar,
+      initial_dims = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE,
+      perplexity = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE,
+      max_iter = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE,
+      pca_center = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center,
+      pca_scale = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale,
+      check_duplicates = FALSE,
+      seed = 212830
+    )
     
     return(res)
   })
@@ -1026,7 +1065,7 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
-    res_summary <- summary(res)
+    res_summary <- summary(res$results)
     tblPrint <- res_summary$importance
     tblPrint <- round(tblPrint, 4)
     
@@ -1061,14 +1100,16 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
-    pcaData <- as.data.frame(res$x)
-    
+    pcaData <- as.data.frame(res$results$x)
     if (ncol(pcaData) == 1){
       ctrl_Analysis$PCAplotSucess <- FALSE
       return(NULL)
     }
     
     ctrl_Analysis$PCAplotSucess <- TRUE
+    pcaData <- pcaData %>% 
+      mutate(Response = as.factor(res$response))
+    
     return(pcaData)
   })
   
@@ -1081,17 +1122,18 @@ server <- function(input, output, session) {
           panel.grid = element_blank()
         )
         
-        ggplot(plotData, aes(x = PC1, y = PC2)) +
+        ggplot(plotData, aes(x = PC1, y = PC2, color = Response)) +
           theme_bw(base_size = 14) +
           customTheme +
-          geom_point(size = 4, colour = rgb(0, 0, 1, .4)) +
-          labs(title = "PCA: First two principal components", x = "PC1", y = "PC2")
+          geom_point(size = 4) +
+          labs(title = "PCA: First two principal components", x = "PC1", y = "PC2") + 
+          guides(color = guide_legend(title = paste0("Response (", input$responseVar, ")"), position = "top"))
       })
     }
   }) %>% 
     bindEvent(input$runAnalysis)
   
-  # Initialize plotData to draw PCA plot.
+  # Initialize plotData to draw tSNE plot.
   analysis_plotContainer1_tSNE_init <- reactive({
     res <- tSNEres()
     
@@ -1100,8 +1142,12 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
-    tsneData <- as.data.frame(res$Y)
+    tsneData <- as.data.frame(res$results$Y)
     colnames(tsneData) <- c("Dim1", "Dim2")
+    
+    tsneData <- tsneData %>% 
+      mutate(Response = as.factor(res$response))
+    
     ctrl_Analysis$tSNEplotSucess <- TRUE
     
     return(tsneData)
@@ -1116,11 +1162,12 @@ server <- function(input, output, session) {
           panel.grid = element_blank()
         )
         
-        ggplot(plotData, aes(x = Dim1, y = Dim2)) +
+        ggplot(plotData, aes(x = Dim1, y = Dim2, color = Response)) +
           theme_bw(base_size = 14) +
           customTheme +
-          geom_point(size = 4, colour = rgb(1, 0, 0, .4)) +
-          labs(title = "t-SNE: Dimensionality Reduction", x = "Dimension 1", y = "Dimension 2")
+          geom_point(size = 4) +
+          labs(title = "t-SNE: Dimensionality Reduction", x = "Dimension 1", y = "Dimension 2") + 
+          guides(color = guide_legend(title = paste0("Response (", input$responseVar, ")"), position = "top"))
       })
     }
   }) %>% 

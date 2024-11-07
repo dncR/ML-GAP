@@ -19,57 +19,80 @@ warningErrorModal <- function(text = "Text to show within model",
   )
 }
 
-tSNEresults <- function(.data = NULL, ...){
+tSNEresults <- function(.data = NULL, .response = NULL, seed = NULL, ...){
   if (is.null(.data)){
     return(NULL)
+  }
+  
+  if (!is.null(seed) && is.numeric(seed)){
+    set.seed(seed)
+  }
+  
+  # Remove duplicates.
+  .data <- .data[!duplicated(.data), ]
+  
+  .response_values <- NULL
+  if (!is.null(.response)){
+    .response_values <- .data[[.response]]
+    
+    .data <- .data %>% 
+      dplyr::select(-all_of(.response))
   }
   
   tsneFit <- try({
     .data %>%
       select(where(is.numeric)) %>%
-      Rtsne(dims = 2, perplexity = 10, verbose = FALSE, max_iter = 500)
+      Rtsne(
+        X = ., 
+        verbose = FALSE,
+        ...
+      )
   })
   
   if (inherits(tsneFit, "try-error")){
     return(NULL)
   }
   
+  return(
+    list(
+      results = tsneFit,
+      response = .response_values
+    )
+  )
+  
   return(tsneFit)
 }
-# # Show modal when file size exceeds allowed limits.
-# # Remove modal when close button is clicked.
-# observe({
-#   if (rVals$uploadFileLimit){
-#     showModal(warningErrorModal()) 
-#   }
-#   
-#   observe({
-#     removeModal()
-#     rVals$uploadFileLimit <- FALSE
-#   }) %>%
-#     bindEvent(input$closeErrorWarningModal, ignoreInit = TRUE)
-#   
-# }) %>% 
-#   bindEvent(rVals$uploadFileLimit, ignoreInit = TRUE)
 
 
-
-pcaResults <- function(.data = NULL, ...){
+pcaResults <- function(.data = NULL, .response = NULL, ...){
   if (is.null(.data)){
     return(NULL)
+  }
+  
+  .response_values <- NULL
+  if (!is.null(.response)){
+    .response_values <- .data[[.response]]
+    
+    .data <- .data %>% 
+      dplyr::select(-all_of(.response))
   }
   
   pcaFit <- try({
     .data %>% 
       select(where(is.numeric)) %>% 
-      prcomp(scale. = TRUE, ...)
+      prcomp(x = ., ...)
   })
   
   if (inherits(pcaFit, "try-error")){
     return(NULL)
   }
   
-  return(pcaFit)
+  return(
+    list(
+      results = pcaFit,
+      response = .response_values
+    )
+  )
 }
 
 
