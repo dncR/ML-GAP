@@ -109,6 +109,12 @@
             HTML('<br>'),
             HTML('<p>You can upload your data (<strong>.txt</strong> or <strong>.csv</strong>) separated by comma, tab, or semicolon.</p>'),
             HTML('<p><b>Note</b>: By default, first row must be the header including the variable names.</p>')
+          ),
+          
+          # Select response variable
+          div(
+            hr(style = "margin: 15px -10px; padding: 0px; border-color: #bebebe"),
+            varSelectInput(inputId = "responseVar", label = "Response Variable", data = NULL)
           )
         ),
         
@@ -491,6 +497,12 @@ server <- function(input, output, session) {
     }) %>% 
       bindEvent(ctrl_Analysis$update)}
   
+  observe({
+    DF <- getData()
+    if (!is.null(DF)){
+      updateVarSelectInput(inputId = "responseVar", data = DF)
+    }
+  })
   
   # Render UI to show Note text above data table which informs the researchers about the number of columns.
   output$colSelectorContainer <- renderUI({
@@ -979,8 +991,10 @@ server <- function(input, output, session) {
   # PCA & tSNE results
   pcaRes <- reactive({
     DF <- getData()
+    
     res <- pcaResults(
       .data = DF, 
+      .response = input$responseVar,
       center = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center, 
       scale. = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale
     )
@@ -990,6 +1004,7 @@ server <- function(input, output, session) {
   
   tSNEres <- reactive({
     DF <- getData()
+    
     res <- tSNEresults(
       .data = DF,
       initial_dims = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE,
@@ -1040,7 +1055,7 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
-    res_summary <- summary(res)
+    res_summary <- summary(res$results)
     tblPrint <- res_summary$importance
     tblPrint <- round(tblPrint, 4)
     
@@ -1075,14 +1090,16 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
-    pcaData <- as.data.frame(res$x)
-    
+    pcaData <- as.data.frame(res$results$x)
     if (ncol(pcaData) == 1){
       ctrl_Analysis$PCAplotSucess <- FALSE
       return(NULL)
     }
     
     ctrl_Analysis$PCAplotSucess <- TRUE
+    pcaData <- pcaData %>% 
+      mutate(Response = as.factor(res$response))
+    
     return(pcaData)
   })
   
@@ -1095,17 +1112,18 @@ server <- function(input, output, session) {
           panel.grid = element_blank()
         )
         
-        ggplot(plotData, aes(x = PC1, y = PC2)) +
+        ggplot(plotData, aes(x = PC1, y = PC2, color = Response)) +
           theme_bw(base_size = 14) +
           customTheme +
-          geom_point(size = 4, colour = rgb(0, 0, 1, .4)) +
-          labs(title = "PCA: First two principal components", x = "PC1", y = "PC2")
+          geom_point(size = 4) +
+          labs(title = "PCA: First two principal components", x = "PC1", y = "PC2") + 
+          guides(color = guide_legend(title = paste0("Response (", input$responseVar, ")"), position = "top"))
       })
     }
   }) %>% 
     bindEvent(input$runAnalysis)
   
-  # Initialize plotData to draw PCA plot.
+  # Initialize plotData to draw tSNE plot.
   analysis_plotContainer1_tSNE_init <- reactive({
     res <- tSNEres()
     
@@ -1113,6 +1131,10 @@ server <- function(input, output, session) {
       ctrl_Analysis$tSNEplotSucess <- FALSE
       return(NULL)
     }
+    
+    # t-SNE sonu??lar??n?? data frame'e d??n????t??r??n
+    # colnames(tsne_data) <- c("Dim1", "Dim2")
+    # tsne_data$Species <- iris$Species[!duplicated(data_numeric)]  # Tekrarlanmayan g??zlemlerle t??rleri e??le??tirin
     
     tsneData <- as.data.frame(res$Y)
     colnames(tsneData) <- c("Dim1", "Dim2")

@@ -28,6 +28,9 @@ tSNEresults <- function(.data = NULL, seed = NULL, ...){
     set.seed(seed)
   }
   
+  # Remove duplicates.
+  .data <- unique(.data)
+  
   tsneFit <- try({
     .data %>%
       select(where(is.numeric)) %>%
@@ -62,9 +65,16 @@ tSNEresults <- function(.data = NULL, seed = NULL, ...){
 
 
 
-pcaResults <- function(.data = NULL, ...){
+pcaResults <- function(.data = NULL, .response = NULL, ...){
   if (is.null(.data)){
     return(NULL)
+  }
+  
+  if (!is.null(.response)){
+    .response_values <- .data[[.response]]
+    
+    .data <- .data %>% 
+      dplyr::select(-.response)
   }
   
   pcaFit <- try({
@@ -77,7 +87,12 @@ pcaResults <- function(.data = NULL, ...){
     return(NULL)
   }
   
-  return(pcaFit)
+  return(
+    list(
+      results = pcaFit,
+      response = .response_values
+    )
+  )
 }
 
 
