@@ -114,7 +114,11 @@
           # Select response variable
           div(
             hr(style = "margin: 15px -10px; padding: 0px; border-color: #bebebe"),
-            selectInput(inputId = "responseVar", label = "Response Variable", choices = NULL, selected = NULL)
+            selectInput(inputId = "responseVar", label = "Response Variable", choices = "a", selected = "a"),
+            span(
+              tags$b("Note"),
+              ": Showing the first five columns only. Make sure that your response variable", 
+              "is one of corresponding columns.")
           )
         ),
         
@@ -511,6 +515,10 @@ server <- function(input, output, session) {
     if (!is.null(DF)){
       responseVarChoices <- colnames(DF)[1:5]
       updateSelectInput(inputId = "responseVar", choices = responseVarChoices, selected = responseVarChoices[1])
+    }
+
+    if (input$selectData == "upload" && is.null(input$upload)){
+      updateSelectInput(inputId = "responseVar", choices = "", selected = "")
     }
   })
   

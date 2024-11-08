@@ -19,6 +19,53 @@ warningErrorModal <- function(text = "Text to show within model",
   )
 }
 
+alertBox <- function(..., class = "alert-box", type = c("note", "error", "warning", "success")){
+  type <- match.arg(type)
+
+  iconType <- switch(
+    type,
+    note = "glyphicon-info-sign",
+    error = "glyphicon-remove-sign",
+    success = "glyphicon-ok-sign",
+    warning = "glyphicon-warning-sign"
+  )
+  
+  iconColor <- switch(
+    type,
+    note = "#3498db",
+    error = "red",
+    success = "#28b463",
+    warning = "#f39c12"
+  )
+  
+  div(
+    class = paste(class, type),
+    icon(paste("glyphicon", iconType), lib = "glyphicon", style=paste0("margin-right: 5px; color: ", iconColor, ";")),
+    span(paste0(type, ": ")),
+    ...
+  )
+}
+
+# Add label to the left of given HTML element.
+labelLeft <- function(..., label = ""){
+  div(
+    style = "display: flex; align-items: center; margin-top: 5px;",
+    tags$label(label, style = "margin-right: 10px; margin-bottom: 15px!important;"),
+    ...
+  )
+}
+
+# Add title with hr under it.
+blockTitle <- function(title = "", hr = TRUE, ...){
+  div(
+    h5(title, style = "margin: 0px!important; padding: 0px!important; color: #004080; font-weight: bold"),
+    if (hr){
+      hr(style = "margin: 10px 0px; padding: 0px; border-color: #bebebe")
+    }
+  )
+}
+
+
 tSNEresults <- function(.data = NULL, .response = NULL, seed = NULL, ...){
   if (is.null(.data)){
     return(NULL)
@@ -63,7 +110,6 @@ tSNEresults <- function(.data = NULL, .response = NULL, seed = NULL, ...){
   return(tsneFit)
 }
 
-
 pcaResults <- function(.data = NULL, .response = NULL, ...){
   if (is.null(.data)){
     return(NULL)
@@ -92,52 +138,5 @@ pcaResults <- function(.data = NULL, .response = NULL, ...){
       results = pcaFit,
       response = .response_values
     )
-  )
-}
-
-
-alertBox <- function(..., class = "alert-box", type = c("note", "error", "warning", "success")){
-  type <- match.arg(type)
-
-  iconType <- switch(
-    type,
-    note = "glyphicon-info-sign",
-    error = "glyphicon-remove-sign",
-    success = "glyphicon-ok-sign",
-    warning = "glyphicon-warning-sign"
-  )
-  
-  iconColor <- switch(
-    type,
-    note = "#3498db",
-    error = "red",
-    success = "#28b463",
-    warning = "#f39c12"
-  )
-  
-  div(
-    class = paste(class, type),
-    icon(paste("glyphicon", iconType), lib = "glyphicon", style=paste0("margin-right: 5px; color: ", iconColor, ";")),
-    span(paste0(type, ": ")),
-    ...
-  )
-}
-
-# Add label to the left of given HTML element.
-labelLeft <- function(..., label = ""){
-  div(
-    style = "display: flex; align-items: center; margin-top: 5px;",
-    tags$label(label, style = "margin-right: 10px; margin-bottom: 15px!important;"),
-    ...
-  )
-}
-
-# Add title with hr under it.
-blockTitle <- function(title = "", hr = TRUE, ...){
-  div(
-    h5(title, style = "margin: 0px!important; padding: 0px!important; color: #004080; font-weight: bold"),
-    if (hr){
-      hr(style = "margin: 10px 0px; padding: 0px; border-color: #bebebe")
-    }
   )
 }
