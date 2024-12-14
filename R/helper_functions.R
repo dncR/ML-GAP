@@ -55,6 +55,15 @@ labelLeft <- function(..., label = ""){
   )
 }
 
+# Add table caption
+tableCaption <- function(caption_text = NULL, font_size = "16px", font_color = "#004080",
+                         style = "margin-bottom: 10px!important", ...){
+  div(
+    style = style,
+    span(tags$b("Table"), ": ", caption_text, style = paste0("font-size: ", font_size, ";", "color: ", font_color))
+  )
+}
+
 # Add title with hr under it.
 blockTitle <- function(title = "", hr = TRUE, ...){
   div(
@@ -62,6 +71,13 @@ blockTitle <- function(title = "", hr = TRUE, ...){
     if (hr){
       hr(style = "margin: 10px 0px; padding: 0px; border-color: #bebebe")
     }
+  )
+}
+
+sectionTitle <- function(title = "", ...){
+  div(
+    h4(paste0("> ", title), style = "margin-bottom: 20px; font-weight: 900"),
+    ...
   )
 }
 

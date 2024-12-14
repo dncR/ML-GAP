@@ -114,7 +114,7 @@
           # Select response variable
           div(
             hr(style = "margin: 15px -10px; padding: 0px; border-color: #bebebe"),
-            selectInput(inputId = "responseVar", label = "Response Variable", choices = "a", selected = "a"),
+            selectInput(inputId = "responseVar", label = "Response Variable", choices = NULL, selected = NULL),
             span(
               tags$b("Note"),
               ": Showing the first five columns only. Make sure that your response variable", 
@@ -147,8 +147,11 @@
             column(
               width = 12,
               div(
-                actionButton("analysisOptionsModal", "Options", 
-                             icon = icon(name = "cog", lib = "glyphicon", style="margin-right: 5px;")),
+                actionButton(
+                  inputId = "analysisOptionsModal", 
+                  label = "Options", 
+                  icon = icon(name = "cog", lib = "glyphicon", style="margin-right: 5px;")
+                ),
                 style = "float: left;"
               )
             )
@@ -207,7 +210,7 @@
               title = '',
               tabPanel(
                 'PCA/t-SNE Figure', 
-                
+            
                 # Container for the PCA and t-SNE analysis results.
                 uiOutput(outputId = "analysis_tableContainer1", inline = FALSE),
                 
@@ -217,7 +220,12 @@
               
               tabPanel(
                 title = 'Augmentation Results',
-                DTOutput('Augmentationcoordinates')
+                
+                # Container for the summary statistics of augmented and raw data.
+                uiOutput(outputId = "augRes_tableContainer", inline = FALSE),
+                
+                # Container for the plots of augmented and raw data.
+                uiOutput(outputId = "augRes_plotContainer", inline = FALSE)
               ),
               
               tabPanel('Statistical Check', DTOutput('Statisticalcomparisons')),
@@ -276,7 +284,8 @@ server <- function(input, output, session) {
   ctrl_Analysis <- reactiveValues(
     tSNEplotSucess = TRUE, 
     PCAplotSucess = TRUE,
-    update = FALSE
+    update = FALSE,
+    analysis_variables = NULL
   )
   
   # Controllers for "Data Upload" tab
@@ -502,7 +511,7 @@ server <- function(input, output, session) {
         alertBox(
           style = "margin-left: 0px!important; margin-right: 0px!important; font-size: 85%!important;",
           type = "warning",
-          'Input(s) have changed. Please re-run the analysis.'
+          'Input(s) have changed. Please re-run the analysis to update outputs.'
         )
       } else {
         div()
@@ -510,11 +519,18 @@ server <- function(input, output, session) {
     }) %>% 
       bindEvent(ctrl_Analysis$update)}
   
+  
+  
   observe({
-    DF <- getData()
-    if (!is.null(DF)){
-      responseVarChoices <- colnames(DF)[1:5]
+    if (ctrl_Global$data){
+      DF <- dataM()
+      varList <- responseVarChoices <- colnames(DF)
+      if (length(varList) > 5){
+        responseVarChoices <- varList[1:5]
+      }
+      
       updateSelectInput(inputId = "responseVar", choices = responseVarChoices, selected = responseVarChoices[1])
+      ctrl_Analysis$analysis_variables <- varList
     }
 
     if (input$selectData == "upload" && is.null(input$upload)){
@@ -522,6 +538,7 @@ server <- function(input, output, session) {
     }
   })
   
+  # PCA & tSNE Plots (Main) ----
   # Render UI to show Note text above data table which informs the researchers about the number of columns.
   output$colSelectorContainer <- renderUI({
     setWidthDTcolumns <- function(x){
@@ -1181,6 +1198,104 @@ server <- function(input, output, session) {
     }
   }) %>% 
     bindEvent(input$runAnalysis)
+  
+  # Augmentation (Analysis) ----
+  output$augRes_tableContainer <- renderUI({
+    tagList(
+      div(
+        style = "border: 1px solid #aeaeae; padding: 10px; margin-bottom: 20px; background: #fbfbfb;",
+        selectInput(
+          inputId = "variableAugmentationRes", label = "Select variable",
+          choices = ctrl_Analysis$analysis_variables[!(ctrl_Analysis$analysis_variables %in% input$responseVar)],
+          selected = ctrl_Analysis$analysis_variables[1]
+        )
+      ),
+      sectionTitle("Summary"),
+      if (ctrl_Global$data){
+        div(
+          style = "margin-bottom: 20px!important;",
+          fluidRow(
+            column(
+              width = 6,
+              md = 3,
+              div(
+                tableCaption("Summary statistics of raw data"),
+                div(
+                  style = "overflow-x: auto; table-layout: fixed; margin-right: 5px!important;",
+                  DTOutput("augmentationSummary_RawData")
+                )
+              )
+            ),
+            # column(
+            #   width = 1
+            # ),
+            column(
+              width = 6,
+              md = 3,
+              div(
+                tableCaption("Summary statistics of augmented data"),
+                div(
+                  style = "overflow-x: auto; table-layout: fixed; margin-left: 5px!important;",
+                  DTOutput("augmentationSummary_AugmentedData")
+                )
+              )
+            )
+          )
+        )
+      } else {
+        alertBox(
+          type = "error",
+          'Retrieving data is not successfull.', 
+          'Please check your data is correctly loaded/uploaded.'
+        )
+      }
+    )
+  }) %>% 
+    bindEvent(input$runAnalysis)
+  
+  output$augRes_plotContainer <- renderUI({
+    tagList(
+      sectionTitle("Plots"),
+      if (ctrl_Global$data){
+        div(
+          style = "margin-bottom: 20px!important;",
+          fluidRow(
+            column(
+              width = 6,
+              md = 3,
+              div(
+                style = "margin-right: 5px!important;",
+                "Raw Figure Here"
+              )
+            ),
+            column(
+              width = 6,
+              md = 3,
+              div(
+                style = "margin-left: 5px!important;",
+                "Augmented Figure Here"
+              )
+            )
+          )
+        )
+      } else {
+        alertBox(
+          type = "error",
+          'Retrieving data is not successfull.', 
+          'Please check your data is correctly loaded/uploaded.'
+        )
+      }
+    )
+  }) %>% 
+    bindEvent(input$runAnalysis)
+  
+  output$augmentationSummary_RawData <- renderDT({
+    iris[1:5, 1:5]
+  })
+  
+  output$augmentationSummary_AugmentedData <- renderDT({
+    iris[51:55, 1:3]
+  })
   
   output$params <- renderPrint({
     list(
