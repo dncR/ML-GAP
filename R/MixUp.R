@@ -99,7 +99,7 @@ MixUp <- function(x, y, alpha = .5, m = 2, method = c("unbiased", "minority", "i
   } else if (method == "unbiased"){
     res <- mixup_init(x, y, alpha, m)
     if (!is.null(y_threshold)){
-      res$y <- as.numeric(res$y >= y_threshold)
+      res$y <- as.numeric(res$y >= y_threshold) + 1
     }
   } else {
     tmp <- lapply(unique(y), function(u){
@@ -116,6 +116,6 @@ MixUp <- function(x, y, alpha = .5, m = 2, method = c("unbiased", "minority", "i
     res <- list(x = x_new, y = y_new)
   }
   
-  res$y <- res$y + 1
   return(res)
 }
+

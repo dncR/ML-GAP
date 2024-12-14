@@ -196,6 +196,7 @@ augmentationResults <- function(.data, .response, ...){
     return(res)
   }
   
+  # tmp <- MixUp(x, y, alpha = .5, m = 2, method = "minority", y_threshold = .5)
   tmp <- MixUp(x, y, ...)
   tmp$y <- as.factor(categories[tmp$y])
   
@@ -205,3 +206,4 @@ augmentationResults <- function(.data, .response, ...){
   
   return(res)
 }
+

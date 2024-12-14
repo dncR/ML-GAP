@@ -1373,11 +1373,12 @@ server <- function(input, output, session) {
   #   )
   # })
   
-  output$console <- renderPrint({
-    list(
-      aug = augmentationRes()
-    )
-  })
+  # output$console <- renderPrint({
+  #   list(
+  #     aug = augmentationRes()
+  #   )
+  # }) %>% 
+  #   bindEvent(input$runAnalysis)
 }
 
 # Execute shiny app
