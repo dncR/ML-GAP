@@ -249,7 +249,8 @@
         
         div(style = "margin-top:50px!important;"),
         h3("Inputs:"),
-        verbatimTextOutput("params")
+        verbatimTextOutput("params"),
+        verbatimTextOutput("console")
       )
     )
   )
@@ -303,7 +304,7 @@ server <- function(input, output, session) {
     if (input$selectData == "example"){  ## Load example data.
       data <- switch(
         input$exampleDataSets,
-        '1' = iris,
+        '1' = iris[1:100, ],
         '2' = mtcars,
         '3' = cervicalCancerData()
       )
@@ -1239,7 +1240,7 @@ server <- function(input, output, session) {
               div(
                 tableCaption("Summary statistics of raw data"),
                 div(
-                  style = "overflow-x: auto; table-layout: fixed; margin-right: 5px!important;",
+                  style = "overflow-x: auto; table-layout: fixed; margin-right: 5px!important; margin-bottom: 15px!important;",
                   DTOutput("augmentationSummary_RawData")
                 )
               )
@@ -1253,7 +1254,7 @@ server <- function(input, output, session) {
               div(
                 tableCaption("Summary statistics of augmented data"),
                 div(
-                  style = "overflow-x: auto; table-layout: fixed; margin-left: 5px!important;",
+                  style = "overflow-x: auto; table-layout: fixed; margin-left: 5px!important; margin-bottom: 15px!important;",
                   DTOutput("augmentationSummary_AugmentedData")
                 )
               )
@@ -1307,46 +1308,74 @@ server <- function(input, output, session) {
   }) %>% 
     bindEvent(input$runAnalysis)
   
-  output$augmentationSummary_RawData <- renderDT({
-    augRes_tmp <- augmentationRes()
-    tblPrint <- NULL
-    
-    if (augRes_tmp$status == "success"){
-      #### BURADA KALDIM ####
-      response_tibble <- tibble(y = augRes_tmp$result$y)
-      colnames(response_tibble) <- input$responseVar
-      tmp_data <- as_tibble(augRes_tmp$result$x) %>% 
-        bind_cols(response_tibble)
+  observe({
+    output$augmentationSummary_AugmentedData <- renderDT({
+      augRes_tmp <- augmentationRes()
+      tblPrint <- NULL
       
-      tblPrint <- tmp_data %>% 
-        group_by(!!sym(input$responseVar)) %>% 
-        summarise(N = n()) %>% 
-        as.data.frame(.)
-    }
-    
-    tblPrint
-  })
+      if (augRes_tmp$status == "success"){
+        #### BURADA KALDIM ####
+        response_tibble <- tibble(y = augRes_tmp$result$y)
+        colnames(response_tibble) <- input$responseVar
+        tmp_data <- as_tibble(augRes_tmp$result$x) %>% 
+          bind_cols(response_tibble)
+        
+        tblPrint <- tmp_data %>% 
+          group_by(!!sym(input$responseVar)) %>% 
+          summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
+          as.data.frame(.)
+      }
+      tblPrint
+    }) %>% 
+      bindEvent(input$variableAugmentationRes)
+  }) %>% 
+    bindEvent(input$runAnalysis)
   
-  output$augmentationSummary_AugmentedData <- renderDT({
-    iris[51:55, 1:3]
-  })
+  observe({
+    output$augmentationSummary_RawData <- renderDT({
+      DF <- getData()
+      tblPrint <- NULL
+      
+      if (!is.null(DF)){
+        tblPrint <- DF %>% 
+          group_by(!!sym(input$responseVar)) %>% 
+          summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
+          as.data.frame(.)
+      }
+      tblPrint
+    }) %>% 
+      bindEvent(input$variableAugmentationRes)
+  }) %>% 
+    bindEvent(input$runAnalysis) 
   
-  output$params <- renderPrint({
+  # output$params <- renderPrint({
+  #   list(
+  #     dimensionReductionMethod = input$dimensionReductionMethod,
+  #     rVals_colFrom = ctrl_DataUpload$colFrom,
+  #     rVals_colTo = ctrl_DataUpload$colTo,
+  #     uploadedFile = input$upload,
+  #     nCol = ncol(dataM()),
+  #     dataValid = ctrl_Global$data,
+  #     tSNEplot = ctrl_Analysis$tSNEplotSucess,
+  #     PCAplot = ctrl_Analysis$PCAplotSucess,
+  #     modalInput = input$preprocessPCA,
+  #     modal2 = input$preplexity_tSNE,
+  #     modal2_rVal = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE,
+  #     ctrlModalPCA = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center,
+  #     ctrlModalPCA2 = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale,
+  #     updated = ctrl_Analysis$update
+  #   )
+  # })
+  
+  output$console <- renderPrint({
     list(
-      dimensionReductionMethod = input$dimensionReductionMethod,
-      rVals_colFrom = ctrl_DataUpload$colFrom,
-      rVals_colTo = ctrl_DataUpload$colTo,
-      uploadedFile = input$upload,
-      nCol = ncol(dataM()),
-      dataValid = ctrl_Global$data,
-      tSNEplot = ctrl_Analysis$tSNEplotSucess,
-      PCAplot = ctrl_Analysis$PCAplotSucess,
-      modalInput = input$preprocessPCA,
-      modal2 = input$preplexity_tSNE,
-      modal2_rVal = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE,
-      ctrlModalPCA = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center,
-      ctrlModalPCA2 = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale,
-      updated = ctrl_Analysis$update
+      aug = augmentationRes()
     )
   })
 }
