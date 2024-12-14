@@ -519,8 +519,7 @@ server <- function(input, output, session) {
     }) %>% 
       bindEvent(ctrl_Analysis$update)}
   
-  
-  
+
   observe({
     if (ctrl_Global$data){
       DF <- dataM()
@@ -1200,6 +1199,25 @@ server <- function(input, output, session) {
     bindEvent(input$runAnalysis)
   
   # Augmentation (Analysis) ----
+  augmentationRes <- reactive({
+    DF <- getData()
+    
+    if (!is.null(DF)){
+      res <- augmentationResults(
+        .data = DF, 
+        .response = input$responseVar,
+        alpha = current_AnalysisOptionsModal$Augmentation$MixUp$alpha_MixUp,
+        m = current_AnalysisOptionsModal$Augmentation$MixUp$m_MixUp, 
+        method = current_AnalysisOptionsModal$Augmentation$MixUp$method_MixUp,
+        y_threshold = current_AnalysisOptionsModal$Augmentation$MixUp$y_threshold_MixUp + 1
+      )
+    } else {
+      return(NULL)
+    }
+    
+    return(res)
+  })
+  
   output$augRes_tableContainer <- renderUI({
     tagList(
       div(
@@ -1290,7 +1308,23 @@ server <- function(input, output, session) {
     bindEvent(input$runAnalysis)
   
   output$augmentationSummary_RawData <- renderDT({
-    iris[1:5, 1:5]
+    augRes_tmp <- augmentationRes()
+    tblPrint <- NULL
+    
+    if (augRes_tmp$status == "success"){
+      #### BURADA KALDIM ####
+      response_tibble <- tibble(y = augRes_tmp$result$y)
+      colnames(response_tibble) <- input$responseVar
+      tmp_data <- as_tibble(augRes_tmp$result$x) %>% 
+        bind_cols(response_tibble)
+      
+      tblPrint <- tmp_data %>% 
+        group_by(!!sym(input$responseVar)) %>% 
+        summarise(N = n()) %>% 
+        as.data.frame(.)
+    }
+    
+    tblPrint
   })
   
   output$augmentationSummary_AugmentedData <- renderDT({

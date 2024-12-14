@@ -6,6 +6,7 @@ library(DT)
 library(ggplot2)
 library(Rtsne)
 library(DESeq2)
+library(forcats)
 
 # Defaults ----
 ## Analysis Options Modal ----

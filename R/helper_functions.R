@@ -156,3 +156,52 @@ pcaResults <- function(.data = NULL, .response = NULL, ...){
     )
   )
 }
+
+
+augmentationResults <- function(.data, .response, ...){
+  x <- .data %>% 
+    select(-all_of(.response)) %>% 
+    as.data.frame(.)
+  
+  y <- .data[[.response]]
+  
+  if (length(unique(y)) != 2){
+    res <- list(status = "error", 
+                message = paste("Response variable must have exactly two non-empty categories.", 
+                                "Please check your response variable is binary and there is no empty category."),
+                result = NULL)
+    
+    return(res)
+  }
+  
+  categories <- NULL
+  if (is.factor(y)){
+    y <- forcats::fct_drop(y)
+    categories <- levels(y)
+    y <- as.numeric(y)
+  } else if (is.numeric(y)){
+    categories <- sort(unique(y))
+    y[y == categories[1]] <- 1
+    y[y != categories[1]] <- 2
+  } else if (is.character(y)){
+    categories <- sort(unique(y))
+    y <- forcats::fct(y, levels = categories)
+    y <- as.numeric(y)
+  } else {
+    res <- list(status = "error", 
+                message = paste("Unknown variable type for response. Please check that response variable is one of",
+                                "'numeric' or 'categorical' variable."),
+                result = NULL)
+    
+    return(res)
+  }
+  
+  tmp <- MixUp(x, y, ...)
+  tmp$y <- as.factor(categories[tmp$y])
+  
+  res <- list(status = "success", 
+              message = NULL,
+              result = tmp)
+  
+  return(res)
+}
