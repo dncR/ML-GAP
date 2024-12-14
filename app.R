@@ -1320,13 +1320,15 @@ server <- function(input, output, session) {
         tmp_data <- as_tibble(augRes_tmp$result$x) %>% 
           bind_cols(response_tibble)
         
-        tblPrint <- tmp_data %>% 
-          group_by(!!sym(input$responseVar)) %>% 
-          summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                    SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                    Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                    Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
-          as.data.frame(.)
+        if (input$variableAugmentationRes %in% colnames(getData())){
+          tblPrint <- tmp_data %>% 
+            group_by(!!sym(input$responseVar)) %>% 
+            summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
+            as.data.frame(.)
+        }
       }
       tblPrint
     }) %>% 
@@ -1339,7 +1341,7 @@ server <- function(input, output, session) {
       DF <- getData()
       tblPrint <- NULL
       
-      if (!is.null(DF)){
+      if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
         tblPrint <- DF %>% 
           group_by(!!sym(input$responseVar)) %>% 
           summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
