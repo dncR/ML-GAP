@@ -1335,9 +1335,11 @@ server <- function(input, output, session) {
         theme(
           panel.grid = element_blank(), 
           axis.text.x = element_text(margin = margin(t = 5, b = 5)),
-          axis.text.y = element_text(margin = margin(r = 5, l = 5))
+          axis.text.y = element_text(margin = margin(r = 5, l = 5)),
+          legend.position = "top"
         ) + 
-        labs(y = "Density")
+        labs(y = "Density") +
+        ggtitle("Distribution of raw data")
     }) %>% 
       bindEvent(input$variableAugmentationRes)
     
@@ -1377,9 +1379,11 @@ server <- function(input, output, session) {
           theme(
             panel.grid = element_blank(), 
             axis.text.x = element_text(margin = margin(t = 5, b = 5)),
-            axis.text.y = element_text(margin = margin(r = 5, l = 5))
+            axis.text.y = element_text(margin = margin(r = 5, l = 5)),
+            legend.position = "top"
           ) + 
-          labs(y = "Density")
+          labs(y = "Density") + 
+          ggtitle("Distribution of augmented data")
       }
     }) %>% 
       bindEvent(input$variableAugmentationRes)
