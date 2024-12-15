@@ -1283,16 +1283,16 @@ server <- function(input, output, session) {
               width = 6,
               md = 3,
               div(
-                style = "margin-right: 5px!important;",
-                "Raw Figure Here"
+                style = "margin-right: 5px!important; margin-bottom: 15px!important;",
+                plotOutput("augmentationPlot_RawData")
               )
             ),
             column(
               width = 6,
               md = 3,
               div(
-                style = "margin-left: 5px!important;",
-                "Augmented Figure Here"
+                style = "margin-left: 5px!important; margin-bottom: 15px!important;",
+                plotOutput("augmentationPlot_AugmentedData")
               )
             )
           )
@@ -1309,12 +1309,42 @@ server <- function(input, output, session) {
     bindEvent(input$runAnalysis)
   
   observe({
+    augRes_tmp <- augmentationRes()
+    DF <- getData()
+    
+    output$augmentationSummary_RawData <- renderDT({
+      tblPrint <- NULL
+      
+      if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
+        tblPrint <- DF %>% 
+          group_by(!!sym(input$responseVar)) %>% 
+          summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
+          as.data.frame(.)
+      }
+      tblPrint
+    }) %>% 
+      bindEvent(input$variableAugmentationRes)
+    
+    output$augmentationPlot_RawData <- renderPlot({
+      ggplot(DF, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
+        geom_density(alpha = .5) + 
+        theme_bw(base_size = 14) + 
+        theme(
+          panel.grid = element_blank(), 
+          axis.text.x = element_text(margin = margin(t = 5, b = 5)),
+          axis.text.y = element_text(margin = margin(r = 5, l = 5))
+        ) + 
+        labs(y = "Density")
+    }) %>% 
+      bindEvent(input$variableAugmentationRes)
+    
     output$augmentationSummary_AugmentedData <- renderDT({
-      augRes_tmp <- augmentationRes()
       tblPrint <- NULL
       
       if (augRes_tmp$status == "success"){
-        #### BURADA KALDIM ####
         response_tibble <- tibble(y = augRes_tmp$result$y)
         colnames(response_tibble) <- input$responseVar
         tmp_data <- as_tibble(augRes_tmp$result$x) %>% 
@@ -1333,28 +1363,29 @@ server <- function(input, output, session) {
       tblPrint
     }) %>% 
       bindEvent(input$variableAugmentationRes)
-  }) %>% 
-    bindEvent(input$runAnalysis)
-  
-  observe({
-    output$augmentationSummary_RawData <- renderDT({
-      DF <- getData()
-      tblPrint <- NULL
-      
-      if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
-        tblPrint <- DF %>% 
-          group_by(!!sym(input$responseVar)) %>% 
-          summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                    SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                    Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                    Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
-          as.data.frame(.)
+    
+    output$augmentationPlot_AugmentedData <- renderPlot({
+      if (augRes_tmp$status == "success"){
+        response_tibble <- tibble(y = augRes_tmp$result$y)
+        colnames(response_tibble) <- input$responseVar
+        DF_augment <- as_tibble(augRes_tmp$result$x) %>% 
+          bind_cols(response_tibble)
+        
+        ggplot(DF_augment, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
+          geom_density(alpha = .5) + 
+          theme_bw(base_size = 14) + 
+          theme(
+            panel.grid = element_blank(), 
+            axis.text.x = element_text(margin = margin(t = 5, b = 5)),
+            axis.text.y = element_text(margin = margin(r = 5, l = 5))
+          ) + 
+          labs(y = "Density")
       }
-      tblPrint
     }) %>% 
       bindEvent(input$variableAugmentationRes)
   }) %>% 
-    bindEvent(input$runAnalysis) 
+    bindEvent(input$runAnalysis)
+  
   
   # output$params <- renderPrint({
   #   list(
