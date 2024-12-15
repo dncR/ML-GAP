@@ -1311,34 +1311,41 @@ server <- function(input, output, session) {
   observe({
     augRes_tmp <- augmentationRes()
     DF <- getData()
+    DF[[input$responseVar]] <- as.factor(DF[[input$responseVar]])
     
     output$augmentationSummary_RawData <- renderDT({
       tblPrint <- NULL
       
-      if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
-        tblPrint <- DF %>% 
-          group_by(!!sym(input$responseVar)) %>% 
-          summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                    SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                    Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                    Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
-          as.data.frame(.)
+      if (!ctrl_Analysis$update){
+        if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
+          tblPrint <- DF %>% 
+            group_by(!!sym(input$responseVar)) %>% 
+            summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
+            as.data.frame(.)
+        }
+        tblPrint
       }
-      tblPrint
     }) # %>% bindEvent(input$variableAugmentationRes)
     
     output$augmentationPlot_RawData <- renderPlot({
-      ggplot(DF, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
-        geom_density(alpha = .5) + 
-        theme_bw(base_size = 14) + 
-        theme(
-          panel.grid = element_blank(), 
-          axis.text.x = element_text(margin = margin(t = 5, b = 5)),
-          axis.text.y = element_text(margin = margin(r = 5, l = 5)),
-          legend.position = "top"
-        ) + 
-        labs(y = "Density") +
-        ggtitle("Distribution of raw data")
+      if (!ctrl_Analysis$update){
+        if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
+          ggplot(DF, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
+            geom_density(alpha = .5) + 
+            theme_bw(base_size = 14) + 
+            theme(
+              panel.grid = element_blank(), 
+              axis.text.x = element_text(margin = margin(t = 5, b = 5)),
+              axis.text.y = element_text(margin = margin(r = 5, l = 5)),
+              legend.position = "top"
+            ) + 
+            labs(y = "Density") +
+            ggtitle("Distribution of raw data")  
+        }
+      }
     }) # %>% bindEvent(input$variableAugmentationRes)
     
     output$augmentationSummary_AugmentedData <- renderDT({
@@ -1350,7 +1357,7 @@ server <- function(input, output, session) {
         tmp_data <- as_tibble(augRes_tmp$result$x) %>% 
           bind_cols(response_tibble)
         
-        if (input$variableAugmentationRes %in% colnames(getData())){
+        if (input$variableAugmentationRes %in% colnames(DF)){
           tblPrint <- tmp_data %>% 
             group_by(!!sym(input$responseVar)) %>% 
             summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
@@ -1370,17 +1377,19 @@ server <- function(input, output, session) {
         DF_augment <- as_tibble(augRes_tmp$result$x) %>% 
           bind_cols(response_tibble)
         
-        ggplot(DF_augment, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
-          geom_density(alpha = .5) + 
-          theme_bw(base_size = 14) + 
-          theme(
-            panel.grid = element_blank(), 
-            axis.text.x = element_text(margin = margin(t = 5, b = 5)),
-            axis.text.y = element_text(margin = margin(r = 5, l = 5)),
-            legend.position = "top"
-          ) + 
-          labs(y = "Density") + 
-          ggtitle("Distribution of augmented data")
+        if (input$variableAugmentationRes %in% colnames(DF)){
+          ggplot(DF_augment, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
+            geom_density(alpha = .5) + 
+            theme_bw(base_size = 14) + 
+            theme(
+              panel.grid = element_blank(), 
+              axis.text.x = element_text(margin = margin(t = 5, b = 5)),
+              axis.text.y = element_text(margin = margin(r = 5, l = 5)),
+              legend.position = "top"
+            ) + 
+            labs(y = "Density") + 
+            ggtitle("Distribution of augmented data")  
+        }
       }
     }) # %>% bindEvent(input$variableAugmentationRes)
   }) %>% 
