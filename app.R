@@ -1325,8 +1325,7 @@ server <- function(input, output, session) {
           as.data.frame(.)
       }
       tblPrint
-    }) %>% 
-      bindEvent(input$variableAugmentationRes)
+    }) # %>% bindEvent(input$variableAugmentationRes)
     
     output$augmentationPlot_RawData <- renderPlot({
       ggplot(DF, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
@@ -1340,8 +1339,7 @@ server <- function(input, output, session) {
         ) + 
         labs(y = "Density") +
         ggtitle("Distribution of raw data")
-    }) %>% 
-      bindEvent(input$variableAugmentationRes)
+    }) # %>% bindEvent(input$variableAugmentationRes)
     
     output$augmentationSummary_AugmentedData <- renderDT({
       tblPrint <- NULL
@@ -1363,8 +1361,7 @@ server <- function(input, output, session) {
         }
       }
       tblPrint
-    }) %>% 
-      bindEvent(input$variableAugmentationRes)
+    }) # %>% bindEvent(input$variableAugmentationRes)
     
     output$augmentationPlot_AugmentedData <- renderPlot({
       if (augRes_tmp$status == "success"){
@@ -1385,8 +1382,7 @@ server <- function(input, output, session) {
           labs(y = "Density") + 
           ggtitle("Distribution of augmented data")
       }
-    }) %>% 
-      bindEvent(input$variableAugmentationRes)
+    }) # %>% bindEvent(input$variableAugmentationRes)
   }) %>% 
     bindEvent(input$runAnalysis)
   
