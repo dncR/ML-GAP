@@ -1,6 +1,9 @@
 # UI SECTION ----
 # UI with fluidPage
 {ui <- fluidPage(
+  # Set Bootstrap Theme (Global)
+  # theme = bs_theme(version = 5),
+  
   # Custom CSS definitions
   # Include the custom CSS file from the css folder
   # tags$head(
@@ -125,6 +128,7 @@
         ## Analysis ----
         conditionalPanel(
           condition = "input.tabs1 == 'Analysis'",
+          
           checkboxGroupInput(
             inputId = "featureSelectionMethod",
             label = "Feature Selection (DE Genes):", 
@@ -209,7 +213,7 @@
               id = "navbarAnalysis",
               title = '',
               tabPanel(
-                'PCA/t-SNE Figure', 
+                'Dimension Reduction (PCA/t-SNE)', 
             
                 # Container for the PCA and t-SNE analysis results.
                 uiOutput(outputId = "analysis_tableContainer1", inline = FALSE),
@@ -219,7 +223,7 @@
               ),
               
               tabPanel(
-                title = 'Augmentation Results',
+                title = 'Data Augmentation',
                 
                 # Container for the summary statistics of augmented and raw data.
                 uiOutput(outputId = "augRes_tableContainer", inline = FALSE),
@@ -228,8 +232,8 @@
                 uiOutput(outputId = "augRes_plotContainer", inline = FALSE)
               ),
               
-              tabPanel('Statistical Check', DTOutput('Statisticalcomparisons')),
-              tabPanel('Dimension Reduction', DTOutput('Dimensioncomparisons'))
+              tabPanel('Agreement', DTOutput('MethodComparison')),
+              tabPanel('Differential Expression', DTOutput('DifferentialExpression'))
             )
           ),
           
@@ -873,17 +877,14 @@ server <- function(input, output, session) {
       footer = tagList(
         fluidRow(
           column(
-            width = 3,
+            width = 12,
             div(
-              style = "margin: 8px 0px 0px 10px!important; float: left;",
+              style = "margin: 8px 30px 0px 10px!important; float: left;",
               span(
                 icon("question-sign", lib = "glyphicon", style="margin-right: 0px;"), 
                 tags$a(href = "about:blank", "Manual", target = "_blank")
               )
-            )
-          ),
-          column(
-            width = 9,
+            ),
             div(
               style = "float: right; margin: 0px 10px 0px 0px!important;",
               actionButton("cancelAnalysisModal", "Cancel"),
@@ -893,12 +894,13 @@ server <- function(input, output, session) {
           )
         )
       ), 
-      easyClose = FALSE
+      easyClose = FALSE, 
+      size = "m"
     )
   }
   
   # Function to update values of elements within "Options" modal under Analysis tab.
-  updateAnalysisOptionsModalElements <- function(reset = FALSE){
+  update_AnalysisOptionsModalElements <- function(reset = FALSE){
     if (reset){
       values <- analysisOptionsModalDefaults
     } else {
@@ -958,14 +960,14 @@ server <- function(input, output, session) {
   
   # Update the modal inputs with current values when Cancel is pressed
   observe({
-    updateAnalysisOptionsModalElements()
+    update_AnalysisOptionsModalElements()
     removeModal()
   }) %>% 
     bindEvent(input$cancelAnalysisModal)
   
   # Restore modal inputs to default values on Reset, without affecting current_values until OK is pressed
   observe({
-    updateAnalysisOptionsModalElements(reset = TRUE)
+    update_AnalysisOptionsModalElements(reset = TRUE)
   }) %>% 
     bindEvent(input$resetAnalysisModal)
   
@@ -1394,6 +1396,10 @@ server <- function(input, output, session) {
     }) # %>% bindEvent(input$variableAugmentationRes)
   }) %>% 
     bindEvent(input$runAnalysis)
+  
+  # Statistical Check ----
+  # 
+  
   
   
   # output$params <- renderPrint({

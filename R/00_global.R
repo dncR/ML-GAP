@@ -7,6 +7,7 @@ library(ggplot2)
 library(Rtsne)
 library(DESeq2)
 library(forcats)
+library(bslib)
 
 # Defaults ----
 ## Analysis Options Modal ----

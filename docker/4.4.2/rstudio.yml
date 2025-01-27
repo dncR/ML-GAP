@@ -28,14 +28,14 @@ services:
       - PASSWORD=rstudio**
     # Select an empty port for the container.
     ports:
-      - '8001:8787'
+      - '8006:8787'
     volumes:
       # Set external volumes.
       # User-specific container (external volume). Files in this folder will be stored as an external volume
       # out of docker container. If docker container was removed, external files will be remained in the main 
       # computer. Multiple volumes can be defined.
-      # - /home/dncr:/home/rstudio/externalvolume
-      - /Users/dncr:/home/rstudio/externalvolume
+      - /home/dncr:/home/rstudio/externalvolume
+      # - /Users/dncr:/home/rstudio/externalvolume
       #  - /Volumes:/home/rstudio/externalmedia
     #deploy:
     #  resources:
