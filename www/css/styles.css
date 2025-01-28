@@ -1,3 +1,13 @@
+.app_title {
+  color: #337ab7;
+  font-weight: 600;
+}
+
+.app_title h2 {
+  font-weight: 600;
+  margin-bottom: 20px!important;
+}
+
 .bordered-div {
   border: 1px solid #aeaeae!important; 
   padding: 10px 15px!important; 
@@ -20,35 +30,35 @@
 }
 
 .alert-box {
-  color:#555;
-  border-radius:10px;
-  padding:10px 10px 10px 15px;
+  color: #555;
+  border-radius: 10px;
+  padding: 10px 10px 10px 15px;
   margin: 10px 10px;
 }
 
 .alert-box span {
-  font-weight:bold;
-  text-transform:uppercase;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 .error {
-  background:#ffecec;
-  border:1px solid #f5aca6;
+  background: #ffecec;
+  border: 1px solid #f5aca6;
 }
 
 .success {
-  background:#e9ffd9;
-  border:1px solid #a6ca8a;
+  background: #e9ffd9;
+  border: 1px solid #a6ca8a;
 }
 
 .warning {
-  background:#fff8c4; /*url('images/notice.png') no-repeat 10px 50%*/
-  border:1px solid #f2c779;
+  background: #fff8c4; /*url('images/notice.png') no-repeat 10px 50%*/
+  border: 1px solid #f2c779;
 }
 
 .note {
-  background:#e3f7fc url('/www/icons/warning.png') no-repeat 10px 50%;
-  border:1px solid #8ed9f6;
+  background: #e3f7fc url('/www/icons/warning.png') no-repeat 10px 50%;
+  border: 1px solid #8ed9f6;
 }
 
 .warning-box {

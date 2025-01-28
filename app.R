@@ -18,7 +18,7 @@
       class = "intro-page",
       
       # Application title
-      h2("ML-GAP2: A Machine Learning-Enhanced Genomic Analysis Pipeline Using Data Augmentation with GANs and MixUp!"),
+      h2("ML-GAP2: A Machine Learning-Enhanced Genomic Analysis Pipeline Using Data Augmentation with GANs and MixUp!", class = "app_title"),
       
       HTML('<p>Leveraging the power of machine learning and data augmentation, our workflow efficiently handles large-scale 
         RNA-seq data for molecular insights in diseases like pulmonary hypertension. RNA-seq analysis is fundamental in 
@@ -49,7 +49,7 @@
   conditionalPanel(
     condition = "input.startAnalysis",
     div(
-      # class = "bordered-div",
+      class = "app_title",
       # style = "margin-top: 10px!important;",
       titlePanel(
         title = "ML-GAP2: A Machine Learning-Enhanced Genomic Analysis Pipeline Using Data Augmentation with GANs and MixUp",
@@ -128,21 +128,28 @@
         ## Analysis ----
         conditionalPanel(
           condition = "input.tabs1 == 'Analysis'",
-          
-          checkboxGroupInput(
-            inputId = "featureSelectionMethod",
-            label = "Feature Selection (DE Genes):", 
-            choiceNames = list("DESeq", "PCA"),
-            choiceValues = list("deseq", "pca"),
-            selected = "deseq"
-          ),
-          
-          checkboxGroupInput(
-            inputId = "statisticalCheckMethod", 
-            label = "Statistical Check (Augmented Data):", 
-            choiceNames = list("Deming regression", "Concordance Correlation Coefficient"),
-            choiceValues = list("deming", "ccc"),
-            selected = "deming"
+          div(
+            radioButtons("dimReduction", label = "Dimension Reduction", 
+                         choiceNames = list("Off", "On"),
+                         choiceValues = list("off", "on"),
+                         inline = TRUE, selected = "on"),
+            
+            radioButtons("dataAugmentation", label = "Data Augmentation (MixUp)", 
+                         choiceNames = list("Off", "On"),
+                         choiceValues = list("off", "on"),
+                         inline = TRUE, selected = "on"),
+            
+            radioButtons("differentialExpression", label = "Differential Expression (DESeq)", 
+                         choiceNames = list("Off", "On"),
+                         choiceValues = list("off", "on"),
+                         inline = TRUE, selected = "on")
+            # div(
+            #   style = "margin-left: 10px!important;",
+            #   conditionalPanel(
+            #     condition = "input.dimReduction == 'on'",
+            #     numericInput("nDimsPCA", label = "Number of features", value = 2, min = 2, width = "150px")
+            #   )
+            # )
           ),
           
           div(style = "margin-top: 30px;"),
