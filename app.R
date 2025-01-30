@@ -681,21 +681,25 @@ server <- function(input, output, session) {
   # Return the UI for a modal dialog with data selection input. If 'failed' is
   # TRUE, then display a message that the previous value was invalid.
   analysisOptionsModal <- function(){
+    modalOptionsChoices <- list(
+      "Dimension Reduction" = "dimReductionModalOptions",
+      "Augmentation" = "augmentationModalOptions",
+      "Differential Expression" = "diffExpModalOptions"
+    )
+    
+    modalOptionsChoices <- modalOptionsChoices[c(input$dimReduction, input$dataAugmentation, input$differentialExpression) == "on"]
+    
     modalDialog(
       span('Please choose options for selected analysis methods.'),
       div(style="margin-bottom:15px;"),
       selectInput(
         inputId = "chooseAnalysisOptionsFromModal", 
         label = "Show options for:", 
-        choices = list(
-          "Dimension Reduction" = "dimReduction",
-          "Augmentation" = "augmentation",
-          "Feature Selection" = "featureSelect"
-        )
+        choices = modalOptionsChoices
       ),
       
       conditionalPanel(
-        condition = 'input.chooseAnalysisOptionsFromModal == "dimReduction"',
+        condition = 'input.chooseAnalysisOptionsFromModal == "dimReductionModalOptions"',
         div(
           class = "bordered-div",
           fluidRow(
@@ -732,7 +736,7 @@ server <- function(input, output, session) {
       ),
       
       conditionalPanel(
-        condition = 'input.chooseAnalysisOptionsFromModal == "augmentation"',
+        condition = 'input.chooseAnalysisOptionsFromModal == "augmentationModalOptions"',
         div(
           class = "bordered-div",
           blockTitle("MixUp Data Augmentation"),
@@ -793,7 +797,7 @@ server <- function(input, output, session) {
       ),
       
       conditionalPanel(
-        condition = 'input.chooseAnalysisOptionsFromModal == "featureSelect"',
+        condition = 'input.chooseAnalysisOptionsFromModal == "diffExpModalOptions"',
         div(
           class = "bordered-div",
           fluidRow(
@@ -1407,7 +1411,30 @@ server <- function(input, output, session) {
   # Statistical Check ----
   # 
   
+  # Observe if analysis options are changed or not. Of changed, activate Run button to re-run analyses.
+  observe({
+    ctrl_Analysis$update <- TRUE
+  }) %>% 
+    bindEvent(input$dimReduction)
   
+  observe({
+    ctrl_Analysis$update <- TRUE
+  }) %>% 
+    bindEvent(input$dataAugmentation)
+  
+  observe({
+    ctrl_Analysis$update <- TRUE
+  }) %>% 
+    bindEvent(input$differentialExpression)
+  
+  # Reset Button (Analysis Tab)
+  # Reset Defaults in the Analysis tab panel.
+  observe({
+    updateRadioButtons(inputId = "dimReduction", selected = "on")
+    updateRadioButtons(inputId = "dataAugmentation", selected = "on")
+    updateRadioButtons(inputId = "differentialExpression", selected = "on")
+  }) %>% 
+    bindEvent(input$resetAnalysisInputs)
   
   # output$params <- renderPrint({
   #   list(
