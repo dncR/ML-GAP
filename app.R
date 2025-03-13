@@ -1322,7 +1322,6 @@ server <- function(input, output, session) {
     bindEvent(input$runAnalysis)
   
   observe({
-    augRes_tmp <- augmentationRes()
     DF <- getData()
     DF[[input$responseVar]] <- as.factor(DF[[input$responseVar]])
     
@@ -1361,10 +1360,16 @@ server <- function(input, output, session) {
       }
     }) # %>% bindEvent(input$variableAugmentationRes)
     
+    augRes_tmp <- if (input$dataAugmentation == "on"){
+      augmentationRes()
+    } else {
+      NULL
+    }
+    
     output$augmentationSummary_AugmentedData <- renderDT({
       tblPrint <- NULL
       
-      if (augRes_tmp$status == "success"){
+      if ((!ctrl_Analysis$update) && !is.null(augRes_tmp) && augRes_tmp$status == "success"){
         response_tibble <- tibble(y = augRes_tmp$result$y)
         colnames(response_tibble) <- input$responseVar
         tmp_data <- as_tibble(augRes_tmp$result$x) %>% 
@@ -1384,7 +1389,7 @@ server <- function(input, output, session) {
     }) # %>% bindEvent(input$variableAugmentationRes)
     
     output$augmentationPlot_AugmentedData <- renderPlot({
-      if (augRes_tmp$status == "success"){
+      if ((!ctrl_Analysis$update) && !is.null(augRes_tmp) && augRes_tmp$status == "success"){
         response_tibble <- tibble(y = augRes_tmp$result$y)
         colnames(response_tibble) <- input$responseVar
         DF_augment <- as_tibble(augRes_tmp$result$x) %>% 
@@ -1403,6 +1408,8 @@ server <- function(input, output, session) {
             labs(y = "Density") + 
             ggtitle("Distribution of augmented data")  
         }
+      } else {
+        NULL
       }
     }) # %>% bindEvent(input$variableAugmentationRes)
   }) %>% 
