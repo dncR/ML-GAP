@@ -307,7 +307,13 @@ server <- function(input, output, session) {
   )
   
   cervicalCancerData <- reactive({
-    read.csv("data/CervicalCO.csv", header = TRUE)
+    tmp <- read.csv("data/CervicalCO.csv", header = TRUE)
+    
+    if (!is.data.frame(tmp) | !(ncol(tmp) >= 1)){
+      return(NULL)
+    }
+    
+    return(tmp)
   })
   
   # Upload/Load (example) data matrix
@@ -481,14 +487,19 @@ server <- function(input, output, session) {
   # Observers controlling the "Run" button under analysis tab, related warnings and update behaviors.
   {# If response variable has changed, analysis should be re-run.
     observe({
-      observe({
-        ctrl_Analysis$update <- TRUE
-      }) %>% 
-        bindEvent(input$responseVar, ignoreInit = TRUE)
-    }) %>% 
-      bindEvent(input$startAnalysis)
+      ctrl_Analysis$update <- TRUE
+    }) %>%
+      bindEvent(input$responseVar, ignoreInit = TRUE)
+    # observe({
+    #   observe({
+    #     ctrl_Analysis$update <- TRUE
+    #   }) %>% 
+    #     bindEvent(input$responseVar, ignoreInit = TRUE)
+    # }) %>% 
+    #   bindEvent(input$startAnalysis)
     
-    # If clicked on "Run" button under analysis tab, button label reset to ""Run".
+    
+    # If clicked on "Run" button under analysis tab, set "Run" button disabled.
     observe({
       updateActionButton(inputId = "runAnalysis", label = "Run", disabled = TRUE)
       ctrl_Analysis$update <- FALSE
@@ -496,21 +507,22 @@ server <- function(input, output, session) {
       bindEvent(input$runAnalysis, ignoreInit = TRUE)
     
     observe({
-      # Disable Run button after results are updated.
-      if (ctrl_Analysis$update){
-        updateActionButton(inputId = "runAnalysis", disabled = FALSE)
-      }
-      
-      # Activate Run button if data is changed.
+      # Change "update" status if dataset is changed/updated.
       observe({
         ctrl_Analysis$update <- TRUE
       }) %>% 
         bindEvent(input$selectData, ignoreInit = TRUE)
       
+      # Change "update" status if example dataset is changed.
       observe({
         ctrl_Analysis$update <- TRUE
       }) %>% 
         bindEvent(input$exampleDataSets, ignoreInit = TRUE)
+      
+      # Enable Run button if inputs changed, i.e., update status is TRUE.
+      if (ctrl_Analysis$update){
+        updateActionButton(inputId = "runAnalysis", disabled = FALSE)
+      }
     })
     
     observe({
@@ -518,6 +530,7 @@ server <- function(input, output, session) {
     }) %>% 
       bindEvent(input$featureSelectionMethod, ignoreInit = TRUE, ignoreNULL = FALSE)
     
+    # Show warning message under "Run" button when update status is changed.
     output$alertBoxForRunButton <- renderUI({
       if (ctrl_Analysis$update){
         alertBox(
@@ -532,6 +545,7 @@ server <- function(input, output, session) {
       bindEvent(ctrl_Analysis$update)}
   
 
+  # If data is active, retrieve variable names from dataset and update "responseVar" choices.
   observe({
     if (ctrl_Global$data){
       DF <- dataM()
@@ -656,7 +670,7 @@ server <- function(input, output, session) {
         alertBox(
           class = "alert-box", 
           type = "error",
-          'Cannot draw PCA plot.'
+          'Cannot draw PCA plot. Please check options for PCA.'
         )
       }
     })
@@ -671,7 +685,7 @@ server <- function(input, output, session) {
       } else {
         alertBox(
           type = "error",
-          'Cannot draw t-SNE plot.'
+          'Cannot draw t-SNE plot. Please check options for t-SNE.'
         )
       }
     })
