@@ -725,7 +725,7 @@ server <- function(input, output, session) {
                 div(
                   style = "margin-left: 10px!important;",
                   numericInput(inputId = "initialDimsPCA_tSNE", label = "Initial dimensions (PCA)", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE, min = 1),
-                  numericInput(inputId = "preplexity_tSNE", label = "Perplexity", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE, min = 1),
+                  numericInput(inputId = "perplexity_tSNE", label = "Perplexity", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$perplexity_tSNE, min = 1),
                   numericInput(inputId = "maxIter_tSNE", label = "Number of iterations", value = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE, min = 1)
                 )
               )
@@ -937,7 +937,7 @@ server <- function(input, output, session) {
     updateCheckboxGroupInput(inputId = "preprocessPCA", selected = preprocessPCA_values)
     
     updateNumericInput(inputId = "initialDimsPCA_tSNE", value = values$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE)
-    updateNumericInput(inputId = "preplexity_tSNE", value = values$PCA_tSNE_plots$tSNE$preplexity_tSNE)
+    updateNumericInput(inputId = "perplexity_tSNE", value = values$PCA_tSNE_plots$tSNE$perplexity_tSNE)
     updateNumericInput(inputId = "maxIter_tSNE", value = values$PCA_tSNE_plots$tSNE$maxIter_tSNE)
     
     # Augmentation (augmentation)
@@ -960,7 +960,7 @@ server <- function(input, output, session) {
     current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center <- "centerPCA" %in% input$preprocessPCA
     current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale <- "scalePCA" %in% input$preprocessPCA
     current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE <- input$initialDimsPCA_tSNE
-    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE <- input$preplexity_tSNE
+    current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$perplexity_tSNE <- input$perplexity_tSNE
     current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE <- input$maxIter_tSNE
     
     # Augmentation (augmentation)
@@ -1071,7 +1071,7 @@ server <- function(input, output, session) {
       .data = DF,
       .response = input$responseVar,
       initial_dims = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$initialDimsPCA_tSNE,
-      perplexity = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE,
+      perplexity = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$perplexity_tSNE,
       max_iter = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$maxIter_tSNE,
       pca_center = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center,
       pca_scale = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale,
