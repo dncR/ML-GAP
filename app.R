@@ -1,6 +1,9 @@
 # UI SECTION ----
 # UI with fluidPage
 {ui <- fluidPage(
+  # Set Bootstrap Theme (Global)
+  # theme = bs_theme(version = 5),
+  
   # Custom CSS definitions
   # Include the custom CSS file from the css folder
   # tags$head(
@@ -15,7 +18,7 @@
       class = "intro-page",
       
       # Application title
-      h2("ML-GAP2: A Machine Learning-Enhanced Genomic Analysis Pipeline Using Data Augmentation with GANs and MixUp!"),
+      h2("ML-GAP2: A Machine Learning-Enhanced Genomic Analysis Pipeline Using Data Augmentation with GANs and MixUp!", class = "app_title"),
       
       HTML('<p>Leveraging the power of machine learning and data augmentation, our workflow efficiently handles large-scale 
         RNA-seq data for molecular insights in diseases like pulmonary hypertension. RNA-seq analysis is fundamental in 
@@ -46,7 +49,7 @@
   conditionalPanel(
     condition = "input.startAnalysis",
     div(
-      # class = "bordered-div",
+      class = "app_title",
       # style = "margin-top: 10px!important;",
       titlePanel(
         title = "ML-GAP2: A Machine Learning-Enhanced Genomic Analysis Pipeline Using Data Augmentation with GANs and MixUp",
@@ -114,27 +117,39 @@
           # Select response variable
           div(
             hr(style = "margin: 15px -10px; padding: 0px; border-color: #bebebe"),
-            varSelectInput(inputId = "responseVar", label = "Response Variable", data = NULL)
+            selectInput(inputId = "responseVar", label = "Response Variable", choices = NULL, selected = NULL),
+            span(
+              tags$b("Note"),
+              ": Showing the first five columns only. Make sure that your response variable", 
+              "is one of corresponding columns.")
           )
         ),
         
         ## Analysis ----
         conditionalPanel(
           condition = "input.tabs1 == 'Analysis'",
-          checkboxGroupInput(
-            inputId = "featureSelectionMethod",
-            label = "Feature Selection (DE Genes):", 
-            choiceNames = list("DESeq", "PCA"),
-            choiceValues = list("deseq", "pca"),
-            selected = "deseq"
-          ),
-          
-          checkboxGroupInput(
-            inputId = "statisticalCheckMethod", 
-            label = "Statistical Check (Augmented Data):", 
-            choiceNames = list("Deming regression", "Concordance Correlation Coefficient"),
-            choiceValues = list("deming", "ccc"),
-            selected = "deming"
+          div(
+            radioButtons("dimReduction", label = "Dimension Reduction", 
+                         choiceNames = list("Off", "On"),
+                         choiceValues = list("off", "on"),
+                         inline = TRUE, selected = "on"),
+            
+            radioButtons("dataAugmentation", label = "Data Augmentation (MixUp)", 
+                         choiceNames = list("Off", "On"),
+                         choiceValues = list("off", "on"),
+                         inline = TRUE, selected = "on"),
+            
+            radioButtons("differentialExpression", label = "Differential Expression (DESeq)", 
+                         choiceNames = list("Off", "On"),
+                         choiceValues = list("off", "on"),
+                         inline = TRUE, selected = "on")
+            # div(
+            #   style = "margin-left: 10px!important;",
+            #   conditionalPanel(
+            #     condition = "input.dimReduction == 'on'",
+            #     numericInput("nDimsPCA", label = "Number of features", value = 2, min = 2, width = "150px")
+            #   )
+            # )
           ),
           
           div(style = "margin-top: 30px;"),
@@ -143,8 +158,11 @@
             column(
               width = 12,
               div(
-                actionButton("analysisOptionsModal", "Options", 
-                             icon = icon(name = "cog", lib = "glyphicon", style="margin-right: 5px;")),
+                actionButton(
+                  inputId = "analysisOptionsModal", 
+                  label = "Options", 
+                  icon = icon(name = "cog", lib = "glyphicon", style="margin-right: 5px;")
+                ),
                 style = "float: left;"
               )
             )
@@ -202,8 +220,8 @@
               id = "navbarAnalysis",
               title = '',
               tabPanel(
-                'PCA/t-SNE Figure', 
-                
+                'Dimension Reduction (PCA/t-SNE)', 
+            
                 # Container for the PCA and t-SNE analysis results.
                 uiOutput(outputId = "analysis_tableContainer1", inline = FALSE),
                 
@@ -212,12 +230,17 @@
               ),
               
               tabPanel(
-                title = 'Augmentation Results',
-                DTOutput('Augmentationcoordinates')
+                title = 'Data Augmentation',
+                
+                # Container for the summary statistics of augmented and raw data.
+                uiOutput(outputId = "augRes_tableContainer", inline = FALSE),
+                
+                # Container for the plots of augmented and raw data.
+                uiOutput(outputId = "augRes_plotContainer", inline = FALSE)
               ),
               
-              tabPanel('Statistical Check', DTOutput('Statisticalcomparisons')),
-              tabPanel('Dimension Reduction', DTOutput('Dimensioncomparisons'))
+              tabPanel('Agreement', DTOutput('MethodComparison')),
+              tabPanel('Differential Expression', DTOutput('DifferentialExpression'))
             )
           ),
           
@@ -237,7 +260,8 @@
         
         div(style = "margin-top:50px!important;"),
         h3("Inputs:"),
-        verbatimTextOutput("params")
+        verbatimTextOutput("params"),
+        verbatimTextOutput("console")
       )
     )
   )
@@ -272,7 +296,8 @@ server <- function(input, output, session) {
   ctrl_Analysis <- reactiveValues(
     tSNEplotSucess = TRUE, 
     PCAplotSucess = TRUE,
-    update = FALSE
+    update = FALSE,
+    analysis_variables = NULL
   )
   
   # Controllers for "Data Upload" tab
@@ -282,7 +307,13 @@ server <- function(input, output, session) {
   )
   
   cervicalCancerData <- reactive({
-    read.table("data/CervicalCO.txt", header = TRUE, sep = "\t", row.names = 1)
+    tmp <- read.csv("data/CervicalCO.csv", header = TRUE)
+    
+    if (!is.data.frame(tmp) | !(ncol(tmp) >= 1)){
+      return(NULL)
+    }
+    
+    return(tmp)
   })
   
   # Upload/Load (example) data matrix
@@ -290,7 +321,7 @@ server <- function(input, output, session) {
     if (input$selectData == "example"){  ## Load example data.
       data <- switch(
         input$exampleDataSets,
-        '1' = iris,
+        '1' = iris[1:100, ],
         '2' = mtcars,
         '3' = cervicalCancerData()
       )
@@ -454,7 +485,21 @@ server <- function(input, output, session) {
       bindEvent(ctrl_DataUpload$colTo)}
   
   # Observers controlling the "Run" button under analysis tab, related warnings and update behaviors.
-  {# If clicked on "Run" button under analysis tab, button label reset to ""Run".
+  {# If response variable has changed, analysis should be re-run.
+    observe({
+      ctrl_Analysis$update <- TRUE
+    }) %>%
+      bindEvent(input$responseVar, ignoreInit = TRUE)
+    # observe({
+    #   observe({
+    #     ctrl_Analysis$update <- TRUE
+    #   }) %>% 
+    #     bindEvent(input$responseVar, ignoreInit = TRUE)
+    # }) %>% 
+    #   bindEvent(input$startAnalysis)
+    
+    
+    # If clicked on "Run" button under analysis tab, set "Run" button disabled.
     observe({
       updateActionButton(inputId = "runAnalysis", label = "Run", disabled = TRUE)
       ctrl_Analysis$update <- FALSE
@@ -462,21 +507,22 @@ server <- function(input, output, session) {
       bindEvent(input$runAnalysis, ignoreInit = TRUE)
     
     observe({
-      # Disable Run button after results are updated.
-      if (ctrl_Analysis$update){
-        updateActionButton(inputId = "runAnalysis", disabled = FALSE)
-      }
-      
-      # Activate Run button if data is changed.
+      # Change "update" status if dataset is changed/updated.
       observe({
         ctrl_Analysis$update <- TRUE
       }) %>% 
         bindEvent(input$selectData, ignoreInit = TRUE)
       
+      # Change "update" status if example dataset is changed.
       observe({
         ctrl_Analysis$update <- TRUE
       }) %>% 
         bindEvent(input$exampleDataSets, ignoreInit = TRUE)
+      
+      # Enable Run button if inputs changed, i.e., update status is TRUE.
+      if (ctrl_Analysis$update){
+        updateActionButton(inputId = "runAnalysis", disabled = FALSE)
+      }
     })
     
     observe({
@@ -484,35 +530,40 @@ server <- function(input, output, session) {
     }) %>% 
       bindEvent(input$featureSelectionMethod, ignoreInit = TRUE, ignoreNULL = FALSE)
     
+    # Show warning message under "Run" button when update status is changed.
     output$alertBoxForRunButton <- renderUI({
       if (ctrl_Analysis$update){
         alertBox(
           style = "margin-left: 0px!important; margin-right: 0px!important; font-size: 85%!important;",
           type = "warning",
-          'Input(s) have changed. Please re-run the analysis.'
+          'Input(s) have changed. Please re-run the analysis to update outputs.'
         )
       } else {
         div()
       }
     }) %>% 
-      bindEvent(ctrl_Analysis$update)
-    
-    # If response variable has changed, analysis should be re-run.
-    observe({
-      observe({
-        ctrl_Analysis$update <- TRUE
-      }) %>% 
-        bindEvent(input$responseVar, ignoreInit = TRUE)
-    }) %>% 
-      bindEvent(input$startAnalysis)}
+      bindEvent(ctrl_Analysis$update)}
   
+
+  # If data is active, retrieve variable names from dataset and update "responseVar" choices.
   observe({
-    DF <- getData()
-    if (!is.null(DF)){
-      updateVarSelectInput(inputId = "responseVar", data = DF)
+    if (ctrl_Global$data){
+      DF <- dataM()
+      varList <- responseVarChoices <- colnames(DF)
+      if (length(varList) > 5){
+        responseVarChoices <- varList[1:5]
+      }
+      
+      updateSelectInput(inputId = "responseVar", choices = responseVarChoices, selected = responseVarChoices[1])
+      ctrl_Analysis$analysis_variables <- varList
+    }
+
+    if (input$selectData == "upload" && is.null(input$upload)){
+      updateSelectInput(inputId = "responseVar", choices = "", selected = "")
     }
   })
   
+  # PCA & tSNE Plots (Main) ----
   # Render UI to show Note text above data table which informs the researchers about the number of columns.
   output$colSelectorContainer <- renderUI({
     setWidthDTcolumns <- function(x){
@@ -619,7 +670,7 @@ server <- function(input, output, session) {
         alertBox(
           class = "alert-box", 
           type = "error",
-          'Cannot draw PCA plot.'
+          'Cannot draw PCA plot. Please check options for PCA.'
         )
       }
     })
@@ -634,7 +685,7 @@ server <- function(input, output, session) {
       } else {
         alertBox(
           type = "error",
-          'Cannot draw t-SNE plot.'
+          'Cannot draw t-SNE plot. Please check options for t-SNE.'
         )
       }
     })
@@ -644,21 +695,25 @@ server <- function(input, output, session) {
   # Return the UI for a modal dialog with data selection input. If 'failed' is
   # TRUE, then display a message that the previous value was invalid.
   analysisOptionsModal <- function(){
+    modalOptionsChoices <- list(
+      "Dimension Reduction" = "dimReductionModalOptions",
+      "Augmentation" = "augmentationModalOptions",
+      "Differential Expression" = "diffExpModalOptions"
+    )
+    
+    modalOptionsChoices <- modalOptionsChoices[c(input$dimReduction, input$dataAugmentation, input$differentialExpression) == "on"]
+    
     modalDialog(
       span('Please choose options for selected analysis methods.'),
       div(style="margin-bottom:15px;"),
       selectInput(
         inputId = "chooseAnalysisOptionsFromModal", 
         label = "Show options for:", 
-        choices = list(
-          "Dimension Reduction" = "dimReduction",
-          "Augmentation" = "augmentation",
-          "Feature Selection" = "featureSelect"
-        )
+        choices = modalOptionsChoices
       ),
       
       conditionalPanel(
-        condition = 'input.chooseAnalysisOptionsFromModal == "dimReduction"',
+        condition = 'input.chooseAnalysisOptionsFromModal == "dimReductionModalOptions"',
         div(
           class = "bordered-div",
           fluidRow(
@@ -695,7 +750,7 @@ server <- function(input, output, session) {
       ),
       
       conditionalPanel(
-        condition = 'input.chooseAnalysisOptionsFromModal == "augmentation"',
+        condition = 'input.chooseAnalysisOptionsFromModal == "augmentationModalOptions"',
         div(
           class = "bordered-div",
           blockTitle("MixUp Data Augmentation"),
@@ -756,7 +811,7 @@ server <- function(input, output, session) {
       ),
       
       conditionalPanel(
-        condition = 'input.chooseAnalysisOptionsFromModal == "featureSelect"',
+        condition = 'input.chooseAnalysisOptionsFromModal == "diffExpModalOptions"',
         div(
           class = "bordered-div",
           fluidRow(
@@ -847,17 +902,14 @@ server <- function(input, output, session) {
       footer = tagList(
         fluidRow(
           column(
-            width = 3,
+            width = 12,
             div(
-              style = "margin: 8px 0px 0px 10px!important; float: left;",
+              style = "margin: 8px 30px 0px 10px!important; float: left;",
               span(
                 icon("question-sign", lib = "glyphicon", style="margin-right: 0px;"), 
                 tags$a(href = "about:blank", "Manual", target = "_blank")
               )
-            )
-          ),
-          column(
-            width = 9,
+            ),
             div(
               style = "float: right; margin: 0px 10px 0px 0px!important;",
               actionButton("cancelAnalysisModal", "Cancel"),
@@ -867,12 +919,13 @@ server <- function(input, output, session) {
           )
         )
       ), 
-      easyClose = FALSE
+      easyClose = FALSE, 
+      size = "m"
     )
   }
   
   # Function to update values of elements within "Options" modal under Analysis tab.
-  updateAnalysisOptionsModalElements <- function(reset = FALSE){
+  update_AnalysisOptionsModalElements <- function(reset = FALSE){
     if (reset){
       values <- analysisOptionsModalDefaults
     } else {
@@ -932,14 +985,14 @@ server <- function(input, output, session) {
   
   # Update the modal inputs with current values when Cancel is pressed
   observe({
-    updateAnalysisOptionsModalElements()
+    update_AnalysisOptionsModalElements()
     removeModal()
   }) %>% 
     bindEvent(input$cancelAnalysisModal)
   
   # Restore modal inputs to default values on Reset, without affecting current_values until OK is pressed
   observe({
-    updateAnalysisOptionsModalElements(reset = TRUE)
+    update_AnalysisOptionsModalElements(reset = TRUE)
   }) %>% 
     bindEvent(input$resetAnalysisModal)
   
@@ -1173,24 +1226,262 @@ server <- function(input, output, session) {
   }) %>% 
     bindEvent(input$runAnalysis)
   
-  output$params <- renderPrint({
-    list(
-      dimensionReductionMethod = input$dimensionReductionMethod,
-      rVals_colFrom = ctrl_DataUpload$colFrom,
-      rVals_colTo = ctrl_DataUpload$colTo,
-      uploadedFile = input$upload,
-      nCol = ncol(dataM()),
-      dataValid = ctrl_Global$data,
-      tSNEplot = ctrl_Analysis$tSNEplotSucess,
-      PCAplot = ctrl_Analysis$PCAplotSucess,
-      modalInput = input$preprocessPCA,
-      modal2 = input$perplexity_tSNE,
-      modal2_rVal = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$perplexity_tSNE,
-      ctrlModalPCA = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center,
-      ctrlModalPCA2 = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale,
-      updated = ctrl_Analysis$update
-    )
+  # Augmentation (Analysis) ----
+  augmentationRes <- reactive({
+    DF <- getData()
+    
+    if (!is.null(DF)){
+      res <- augmentationResults(
+        .data = DF, 
+        .response = input$responseVar,
+        alpha = current_AnalysisOptionsModal$Augmentation$MixUp$alpha_MixUp,
+        m = current_AnalysisOptionsModal$Augmentation$MixUp$m_MixUp, 
+        method = current_AnalysisOptionsModal$Augmentation$MixUp$method_MixUp,
+        y_threshold = current_AnalysisOptionsModal$Augmentation$MixUp$y_threshold_MixUp + 1
+      )
+    } else {
+      return(NULL)
+    }
+    
+    return(res)
   })
+  
+  output$augRes_tableContainer <- renderUI({
+    tagList(
+      div(
+        style = "border: 1px solid #aeaeae; padding: 10px; margin-bottom: 20px; background: #fbfbfb;",
+        selectInput(
+          inputId = "variableAugmentationRes", label = "Select variable",
+          choices = ctrl_Analysis$analysis_variables[!(ctrl_Analysis$analysis_variables %in% input$responseVar)],
+          selected = ctrl_Analysis$analysis_variables[1]
+        )
+      ),
+      sectionTitle("Summary"),
+      if (ctrl_Global$data){
+        div(
+          style = "margin-bottom: 20px!important;",
+          fluidRow(
+            column(
+              width = 6,
+              md = 3,
+              div(
+                tableCaption("Summary statistics of raw data"),
+                div(
+                  style = "overflow-x: auto; table-layout: fixed; margin-right: 5px!important; margin-bottom: 15px!important;",
+                  DTOutput("augmentationSummary_RawData")
+                )
+              )
+            ),
+            # column(
+            #   width = 1
+            # ),
+            column(
+              width = 6,
+              md = 3,
+              div(
+                tableCaption("Summary statistics of augmented data"),
+                div(
+                  style = "overflow-x: auto; table-layout: fixed; margin-left: 5px!important; margin-bottom: 15px!important;",
+                  DTOutput("augmentationSummary_AugmentedData")
+                )
+              )
+            )
+          )
+        )
+      } else {
+        alertBox(
+          type = "error",
+          'Retrieving data is not successfull.', 
+          'Please check your data is correctly loaded/uploaded.'
+        )
+      }
+    )
+  }) %>% 
+    bindEvent(input$runAnalysis)
+  
+  output$augRes_plotContainer <- renderUI({
+    tagList(
+      sectionTitle("Plots"),
+      if (ctrl_Global$data){
+        div(
+          style = "margin-bottom: 20px!important;",
+          fluidRow(
+            column(
+              width = 6,
+              md = 3,
+              div(
+                style = "margin-right: 5px!important; margin-bottom: 15px!important;",
+                plotOutput("augmentationPlot_RawData")
+              )
+            ),
+            column(
+              width = 6,
+              md = 3,
+              div(
+                style = "margin-left: 5px!important; margin-bottom: 15px!important;",
+                plotOutput("augmentationPlot_AugmentedData")
+              )
+            )
+          )
+        )
+      } else {
+        alertBox(
+          type = "error",
+          'Retrieving data is not successfull.', 
+          'Please check your data is correctly loaded/uploaded.'
+        )
+      }
+    )
+  }) %>% 
+    bindEvent(input$runAnalysis)
+  
+  observe({
+    DF <- getData()
+    DF[[input$responseVar]] <- as.factor(DF[[input$responseVar]])
+    
+    output$augmentationSummary_RawData <- renderDT({
+      tblPrint <- NULL
+      
+      if (!ctrl_Analysis$update){
+        if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
+          tblPrint <- DF %>% 
+            group_by(!!sym(input$responseVar)) %>% 
+            summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
+            as.data.frame(.)
+        }
+        tblPrint
+      }
+    }) # %>% bindEvent(input$variableAugmentationRes)
+    
+    output$augmentationPlot_RawData <- renderPlot({
+      if (!ctrl_Analysis$update){
+        if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
+          ggplot(DF, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
+            geom_density(alpha = .5) + 
+            theme_bw(base_size = 14) + 
+            theme(
+              panel.grid = element_blank(), 
+              axis.text.x = element_text(margin = margin(t = 5, b = 5)),
+              axis.text.y = element_text(margin = margin(r = 5, l = 5)),
+              legend.position = "top"
+            ) + 
+            labs(y = "Density") +
+            ggtitle("Distribution of raw data")  
+        }
+      }
+    }) # %>% bindEvent(input$variableAugmentationRes)
+    
+    augRes_tmp <- if (input$dataAugmentation == "on"){
+      augmentationRes()
+    } else {
+      NULL
+    }
+    
+    output$augmentationSummary_AugmentedData <- renderDT({
+      tblPrint <- NULL
+      
+      if ((!ctrl_Analysis$update) && !is.null(augRes_tmp) && augRes_tmp$status == "success"){
+        response_tibble <- tibble(y = augRes_tmp$result$y)
+        colnames(response_tibble) <- input$responseVar
+        tmp_data <- as_tibble(augRes_tmp$result$x) %>% 
+          bind_cols(response_tibble)
+        
+        if (input$variableAugmentationRes %in% colnames(DF)){
+          tblPrint <- tmp_data %>% 
+            group_by(!!sym(input$responseVar)) %>% 
+            summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                      Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
+            as.data.frame(.)
+        }
+      }
+      tblPrint
+    }) # %>% bindEvent(input$variableAugmentationRes)
+    
+    output$augmentationPlot_AugmentedData <- renderPlot({
+      if ((!ctrl_Analysis$update) && !is.null(augRes_tmp) && augRes_tmp$status == "success"){
+        response_tibble <- tibble(y = augRes_tmp$result$y)
+        colnames(response_tibble) <- input$responseVar
+        DF_augment <- as_tibble(augRes_tmp$result$x) %>% 
+          bind_cols(response_tibble)
+        
+        if (input$variableAugmentationRes %in% colnames(DF)){
+          ggplot(DF_augment, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
+            geom_density(alpha = .5) + 
+            theme_bw(base_size = 14) + 
+            theme(
+              panel.grid = element_blank(), 
+              axis.text.x = element_text(margin = margin(t = 5, b = 5)),
+              axis.text.y = element_text(margin = margin(r = 5, l = 5)),
+              legend.position = "top"
+            ) + 
+            labs(y = "Density") + 
+            ggtitle("Distribution of augmented data")  
+        }
+      } else {
+        NULL
+      }
+    }) # %>% bindEvent(input$variableAugmentationRes)
+  }) %>% 
+    bindEvent(input$runAnalysis)
+  
+  # Statistical Check ----
+  # 
+  
+  # Observe if analysis options are changed or not. Of changed, activate Run button to re-run analyses.
+  observe({
+    ctrl_Analysis$update <- TRUE
+  }) %>% 
+    bindEvent(input$dimReduction)
+  
+  observe({
+    ctrl_Analysis$update <- TRUE
+  }) %>% 
+    bindEvent(input$dataAugmentation)
+  
+  observe({
+    ctrl_Analysis$update <- TRUE
+  }) %>% 
+    bindEvent(input$differentialExpression)
+  
+  # Reset Button (Analysis Tab)
+  # Reset Defaults in the Analysis tab panel.
+  observe({
+    updateRadioButtons(inputId = "dimReduction", selected = "on")
+    updateRadioButtons(inputId = "dataAugmentation", selected = "on")
+    updateRadioButtons(inputId = "differentialExpression", selected = "on")
+  }) %>% 
+    bindEvent(input$resetAnalysisInputs)
+  
+  # output$params <- renderPrint({
+  #   list(
+  #     dimensionReductionMethod = input$dimensionReductionMethod,
+  #     rVals_colFrom = ctrl_DataUpload$colFrom,
+  #     rVals_colTo = ctrl_DataUpload$colTo,
+  #     uploadedFile = input$upload,
+  #     nCol = ncol(dataM()),
+  #     dataValid = ctrl_Global$data,
+  #     tSNEplot = ctrl_Analysis$tSNEplotSucess,
+  #     PCAplot = ctrl_Analysis$PCAplotSucess,
+  #     modalInput = input$preprocessPCA,
+  #     modal2 = input$preplexity_tSNE,
+  #     modal2_rVal = current_AnalysisOptionsModal$PCA_tSNE_plots$tSNE$preplexity_tSNE,
+  #     ctrlModalPCA = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$center,
+  #     ctrlModalPCA2 = current_AnalysisOptionsModal$PCA_tSNE_plots$PCA$scale,
+  #     updated = ctrl_Analysis$update
+  #   )
+  # })
+  
+  # output$console <- renderPrint({
+  #   list(
+  #     aug = augmentationRes()
+  #   )
+  # }) %>% 
+  #   bindEvent(input$runAnalysis)
 }
 
 # Execute shiny app

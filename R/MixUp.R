@@ -44,23 +44,31 @@ mixup_init <- function(.x, .y, alpha = .5, m = 2) {
 # Note: y stands for the response variable.
 #
 # Args:
-#  x, y: a matrix or data.frame including the complete data. Response variable should be given with 'y'.
-#  alpha: a positive numeric. It is the shape parameters (shape1 and shape2) of Beta distribution.
-#  m: a positive integer. Should be equal or greater than 2. It is used to define the amount of replication
-#     of data matrix. If equals 2, for example, the number of samples in the new data set will be 2 times 
-#     of the original one.
-#  y_threshold: a numeric value. MixUp'd y values is assigned one of classes based on y_threshold value. If above or equal y_threshold, 
-#               new observation is assigned to class 1, and 0 otherwise.
+#   x, y: a matrix or data.frame including the complete data. Response variable should be given with 'y'.
+#   alpha: a positive numeric. It is the shape parameters (shape1 and shape2) of Beta distribution.
+#   m: a positive integer. Should be equal or greater than 2. It is used to define the amount of replication
+#      of data matrix. If equals 2, for example, the number of samples in the new data set will be 2 times 
+#      of the original one.
+#   method: augmentation method. Default is "unbiased". Other choices are:
+#           unbiased: generates random samples without considering group sizes.
+#           minority: generates samples from minority class. Generated data is multiple of original data by m.
+#           inner: generates data from both groups multiplied by m.
+#   y_threshold: a numeric value. MixUp'd y values is assigned one of classes based on y_threshold value. If above or equal y_threshold, 
+#                new observation is assigned to class 1, and 0 otherwise.
 #
 # Example:
-#   set.seed(42)
-#   x_tr <- matrix(rpois(1000, lambda = 50), ncol = 10)
-#   y_tr <- ifelse(rpois(100, lambda = 1) > 0, 1, 0)
+# set.seed(42)
+# x_tr <- matrix(rpois(1000, lambda = 50), ncol = 10)
+# y_tr <- ifelse(rpois(100, lambda = 1) > 0, 1, 0)
 # 
-#   res <- MixUp(x_tr, y_tr, method = "unb", m = 2, y_threshold = .5)
-#   table(y_tr)
-#   table(res$y)
-
+# res <- MixUp(x_tr, y_tr, method = "unb", m = 2, y_threshold = .5)
+# tbl1 <- table(y_tr)
+# tbl1
+# prop.table(tbl1)
+# 
+# tbl2 <- table(res$y)
+# tbl2
+# prop.table(tbl2)
 MixUp <- function(x, y, alpha = .5, m = 2, method = c("unbiased", "minority", "inner"), y_threshold = 0.5, ...){
   
   method <- match.arg(method)
@@ -91,7 +99,7 @@ MixUp <- function(x, y, alpha = .5, m = 2, method = c("unbiased", "minority", "i
   } else if (method == "unbiased"){
     res <- mixup_init(x, y, alpha, m)
     if (!is.null(y_threshold)){
-      res$y <- as.numeric(res$y >= y_threshold)
+      res$y <- as.numeric(res$y >= y_threshold) + 1
     }
   } else {
     tmp <- lapply(unique(y), function(u){
@@ -110,6 +118,4 @@ MixUp <- function(x, y, alpha = .5, m = 2, method = c("unbiased", "minority", "i
   
   return(res)
 }
-
-
 
