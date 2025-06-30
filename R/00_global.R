@@ -17,7 +17,7 @@ analysisOptionsModalDefaults <- list(
     ),
     tSNE = list(
       initialDimsPCA_tSNE = 50,
-      preplexity_tSNE = 10,
+      perplexity_tSNE = 10,
       maxIter_tSNE = 500
     )
   ),
