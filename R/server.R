@@ -983,30 +983,31 @@ server <- function(input, output, session) {
           style = "margin-bottom: 20px!important;",
           fluidRow(
             column(
-              width = 6,
-              md = 3,
+              width = if (input$dataAugmentation == "on") 6 else 12,
               div(
                 tableCaption("Summary statistics of raw data"),
                 div(
-                  style = "overflow-x: auto; table-layout: fixed; margin-right: 5px!important; margin-bottom: 15px!important;",
+                  style = if (input$dataAugmentation == "on") {
+                    "overflow-x: auto; table-layout: fixed; margin-right: 5px!important; margin-bottom: 15px!important;"
+                  } else {
+                    "overflow-x: auto; table-layout: fixed; margin-bottom: 15px!important;"
+                  },
                   DTOutput("augmentationSummary_RawData")
                 )
               )
             ),
-            # column(
-            #   width = 1
-            # ),
-            column(
-              width = 6,
-              md = 3,
-              div(
-                tableCaption("Summary statistics of augmented data"),
+            if (input$dataAugmentation == "on") {
+              column(
+                width = 6,
                 div(
-                  style = "overflow-x: auto; table-layout: fixed; margin-left: 5px!important; margin-bottom: 15px!important;",
-                  DTOutput("augmentationSummary_AugmentedData")
+                  tableCaption("Summary statistics of augmented data"),
+                  div(
+                    style = "overflow-x: auto; table-layout: fixed; margin-left: 5px!important; margin-bottom: 15px!important;",
+                    DTOutput("augmentationSummary_AugmentedData")
+                  )
                 )
               )
-            )
+            }
           )
         )
       } else {
@@ -1028,21 +1029,25 @@ server <- function(input, output, session) {
           style = "margin-bottom: 20px!important;",
           fluidRow(
             column(
-              width = 6,
-              md = 3,
+              width = if (input$dataAugmentation == "on") 6 else 12,
               div(
-                style = "margin-right: 5px!important; margin-bottom: 15px!important;",
+                style = if (input$dataAugmentation == "on") {
+                  "margin-right: 5px!important; margin-bottom: 15px!important;"
+                } else {
+                  "margin-bottom: 15px!important;"
+                },
                 plotOutput("augmentationPlot_RawData")
               )
             ),
-            column(
-              width = 6,
-              md = 3,
-              div(
-                style = "margin-left: 5px!important; margin-bottom: 15px!important;",
-                plotOutput("augmentationPlot_AugmentedData")
+            if (input$dataAugmentation == "on") {
+              column(
+                width = 6,
+                div(
+                  style = "margin-left: 5px!important; margin-bottom: 15px!important;",
+                  plotOutput("augmentationPlot_AugmentedData")
+                )
               )
-            )
+            }
           )
         )
       } else {
