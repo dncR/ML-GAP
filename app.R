@@ -1345,37 +1345,38 @@ server <- function(input, output, session) {
     DF[[input$responseVar]] <- as.factor(DF[[input$responseVar]])
     
     output$augmentationSummary_RawData <- renderDT({
+      req(!ctrl_Analysis$update)
+
       tblPrint <- NULL
-      
-      if (!ctrl_Analysis$update){
-        if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
-          tblPrint <- DF %>% 
-            group_by(!!sym(input$responseVar)) %>% 
-            summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                      SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                      Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                      Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
-            as.data.frame(.)
-        }
-        tblPrint
+
+      if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
+        tblPrint <- DF %>%
+          group_by(!!sym(input$responseVar)) %>%
+          summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
+                    Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>%
+          as.data.frame(.)
       }
+
+      tblPrint
     }) # %>% bindEvent(input$variableAugmentationRes)
     
     output$augmentationPlot_RawData <- renderPlot({
-      if (!ctrl_Analysis$update){
-        if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
-          ggplot(DF, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
-            geom_density(alpha = .5) + 
-            theme_bw(base_size = 14) + 
-            theme(
-              panel.grid = element_blank(), 
-              axis.text.x = element_text(margin = margin(t = 5, b = 5)),
-              axis.text.y = element_text(margin = margin(r = 5, l = 5)),
-              legend.position = "top"
-            ) + 
-            labs(y = "Density") +
-            ggtitle("Distribution of raw data")  
-        }
+      req(!ctrl_Analysis$update)
+
+      if (!is.null(DF) & input$variableAugmentationRes %in% colnames(DF)){
+        ggplot(DF, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) +
+          geom_density(alpha = .5) +
+          theme_bw(base_size = 14) +
+          theme(
+            panel.grid = element_blank(),
+            axis.text.x = element_text(margin = margin(t = 5, b = 5)),
+            axis.text.y = element_text(margin = margin(r = 5, l = 5)),
+            legend.position = "top"
+          ) +
+          labs(y = "Density") +
+          ggtitle("Distribution of raw data")
       }
     }) # %>% bindEvent(input$variableAugmentationRes)
     
@@ -1386,49 +1387,52 @@ server <- function(input, output, session) {
     }
     
     output$augmentationSummary_AugmentedData <- renderDT({
+      req(!ctrl_Analysis$update)
+
       tblPrint <- NULL
-      
-      if ((!ctrl_Analysis$update) && !is.null(augRes_tmp) && augRes_tmp$status == "success"){
+
+      if (!is.null(augRes_tmp) && augRes_tmp$status == "success"){
         response_tibble <- tibble(y = augRes_tmp$result$y)
         colnames(response_tibble) <- input$responseVar
-        tmp_data <- as_tibble(augRes_tmp$result$x) %>% 
+        tmp_data <- as_tibble(augRes_tmp$result$x) %>%
           bind_cols(response_tibble)
-        
+
         if (input$variableAugmentationRes %in% colnames(DF)){
-          tblPrint <- tmp_data %>% 
-            group_by(!!sym(input$responseVar)) %>% 
+          tblPrint <- tmp_data %>%
+            group_by(!!sym(input$responseVar)) %>%
             summarise(N = n(), Mean = round(mean(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
                       SD = round(sd(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
                       Min = round(min(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4),
-                      Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>% 
+                      Max = round(max(!!sym(input$variableAugmentationRes), na.rm = TRUE), 4)) %>%
             as.data.frame(.)
         }
       }
+
       tblPrint
     }) # %>% bindEvent(input$variableAugmentationRes)
     
     output$augmentationPlot_AugmentedData <- renderPlot({
-      if ((!ctrl_Analysis$update) && !is.null(augRes_tmp) && augRes_tmp$status == "success"){
+      req(!ctrl_Analysis$update)
+
+      if (!is.null(augRes_tmp) && augRes_tmp$status == "success"){
         response_tibble <- tibble(y = augRes_tmp$result$y)
         colnames(response_tibble) <- input$responseVar
-        DF_augment <- as_tibble(augRes_tmp$result$x) %>% 
+        DF_augment <- as_tibble(augRes_tmp$result$x) %>%
           bind_cols(response_tibble)
-        
+
         if (input$variableAugmentationRes %in% colnames(DF)){
-          ggplot(DF_augment, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) + 
-            geom_density(alpha = .5) + 
-            theme_bw(base_size = 14) + 
+          ggplot(DF_augment, aes(x = !!sym(input$variableAugmentationRes), color = !!sym(input$responseVar), fill = !!sym(input$responseVar))) +
+            geom_density(alpha = .5) +
+            theme_bw(base_size = 14) +
             theme(
-              panel.grid = element_blank(), 
+              panel.grid = element_blank(),
               axis.text.x = element_text(margin = margin(t = 5, b = 5)),
               axis.text.y = element_text(margin = margin(r = 5, l = 5)),
               legend.position = "top"
-            ) + 
-            labs(y = "Density") + 
-            ggtitle("Distribution of augmented data")  
+            ) +
+            labs(y = "Density") +
+            ggtitle("Distribution of augmented data")
         }
-      } else {
-        NULL
       }
     }) # %>% bindEvent(input$variableAugmentationRes)
   }) %>% 
