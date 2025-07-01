@@ -1,14 +1,3 @@
-options(shiny.maxRequestSize = 30 * (1024^2))  # Max upload size is 30 MB. 
-
-library(shiny)
-library(dplyr)
-library(DT)
-library(ggplot2)
-library(Rtsne)
-library(DESeq2)
-library(forcats)
-library(bslib)
-
 # Defaults ----
 ## Analysis Options Modal ----
 analysisOptionsModalDefaults <- list(
