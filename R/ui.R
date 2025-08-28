@@ -32,7 +32,7 @@
       
       div(
         class = "centered",
-        img(src = "figure/Capture.PNG", width = 300, height = 300, style = "max-width: 100%; height: auto;"),
+        img(src = "www/figure/Capture.PNG", width = 300, height = 300, style = "max-width: 100%; height: auto;"),
         style = "margin-top: 20px!important"
       )
     ),
